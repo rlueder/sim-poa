@@ -10,7 +10,7 @@ the way.
 - **Phase 0** and **phase 1** are complete: PRs #1 and #2, then the full
   download manifest and the full atlas build in PR #5 (20 November 2026).
 - **Phase 2** (road network), PR #4 on branch `feat/fase-2-rede`. Every check
-  passes; the bus import (with `rtree`, approved) is in progress.
+  passes, buses from GTFS included.
 
 ## Phase 0: what was found before planning
 
@@ -417,8 +417,8 @@ Evidence comes from `pnpm network:build` on 20 November 2026, recorded in
       planalto.gov.br on 20 November 2026 (`network/speeds.py`).
 - [ ] CI is green. The build ran twice from `data/raw/` with the same results.
 
-Not done: step 5 of the design, buses from GTFS. `gtfs2pt.py` imports `rtree`,
-which was not installed; approved as decision 3 below, the step is in progress.
+Step 5 of the design, buses from GTFS, is done (see "Buses" below); `rtree`
+was approved as decision 3 for it.
 
 Out of scope: lane-level corrections outside the focus corridors, and demand
 (phase 3).
@@ -459,6 +459,21 @@ end before it is to check in phase 3, when external demand needs them.
 out at 1.7 km because OSM gives that name to only 1.7 km. Ipiranga "volta"
 keeps 82% of its length on the avenue and Baltazar "ida" 80%; where those
 routes leave the avenue is not checked yet.
+
+**Buses.** GTFS for Wednesday 29 October 2025, the day the atlas uses, with
+the blank stop times filled in by stop order. `gtfs2pt.py` turned 12,527 of
+the 12,565 trips into vehicles on 851 line variants and placed 5,142 of the
+5,234 stops; 317 stop visits (out of 768,152) were left off routes they did
+not fit. Matching takes about 50 minutes, so the result is cached by the
+content of the network and of the day's GTFS. In 738 places a route loops
+around to reach the next stop (median detour 8.5 times the straight line),
+probably a stop on the wrong side of a divided road; to look at on the focus
+corridors in phase 4. With the scheduled hold at every stop, a full day of
+buses alone in mesoscopic mode had 85 teleports, all at one stop on Av.
+Teresópolis: buses ran ahead of a timetable that is interpolated at most
+stops, waited, and blocked the ones behind. Without the holds (buses leave on
+schedule, then follow traffic) the same day has 0 teleports; the build now
+checks this.
 
 **`netconvert` warnings (2,108).**
 

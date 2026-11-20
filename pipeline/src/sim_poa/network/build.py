@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -13,15 +14,17 @@ import pandas as pd
 import shapely
 from shapely.geometry.base import BaseGeometry
 
-from sim_poa.atlas import edom, supply
+from sim_poa.atlas import edom, supply, transit
 from sim_poa.atlas.build import EDOM_DIR, EDOM_ZONES
 from sim_poa.atlas.export import write_geojson, write_json
 from sim_poa.network import checks
+from sim_poa.network.buses import complete_feed, import_buses, run_day
 from sim_poa.network.clip import city_outline, clip, study_area
 from sim_poa.network.convert import netconvert, set_signals, write_typemap
 from sim_poa.network.speeds import default_speeds_kmh
 
 OSM_DIR = "osm-geofabrik-sul"
+GTFS_DIR = "gtfs"
 LAYERS_DIR = "camadas-eptc"
 SIGNALS_PATTERN = "_EPS_CadastroSemaforico_*.zip"
 NET_FILE = "poa.net.xml.gz"
@@ -234,6 +237,28 @@ def build(raw_dir: Path, derived_dir: Path, site_dir: Path, reports_dir: Path) -
     corridors = checks.corridor_free_flow(net, edges, city)
     summary["corridors"] = corridors.drop(columns="geometry").to_dict(orient="records")
 
+    started = _step("ônibus do GTFS")
+    feed = _single(raw_dir / GTFS_DIR, "*.zip")
+    with zipfile.ZipFile(feed) as opened:
+        day = transit.typical_weekday(opened)
+    day_feed = derived_dir / "gtfs" / f"gtfs-{day.isoformat()}.zip"
+    trips = complete_feed(feed, day_feed, day)
+    buses = import_buses(net_file, day_feed, day, derived_dir / "onibus")
+    summary["buses"] = {
+        "feed": feed.name,
+        "day": day.isoformat(),
+        "gtfs_trips": trips,
+        **buses.summary(),
+        "seconds": round(time.monotonic() - started),
+    }
+    if buses.vehicles == 0:
+        report.checks_failed.append("nenhum ônibus importado do GTFS")
+    bus_day = run_day(net_file, buses)
+    summary["buses"]["day_test"] = bus_day
+    bus_share = bus_day["teleport_share"]
+    if bus_share is None or bus_share >= MAX_TELEPORT_SHARE:
+        report.checks_failed.append("teletransportes no dia dos ônibus")
+
     started = _step("teste mesoscópico")
     smoke = checks.smoke_test(net_file, derived_dir / "checks")
     smoke["seconds"] = round(time.monotonic() - started)
@@ -255,7 +280,8 @@ def build(raw_dir: Path, derived_dir: Path, site_dir: Path, reports_dir: Path) -
         out / "corridors.geojson", corridors[corridors["routed"]]
     )
     site_summary = {
-        k: summary[k] for k in ("osm", "network", "signals", "zones", "reachability", "smoke_test")
+        k: summary[k]
+        for k in ("osm", "network", "signals", "zones", "reachability", "buses", "smoke_test")
     }
     report.files["network/summary.json"] = write_json(out / "summary.json", site_summary)
     write_json(reports_dir / "network.json", summary)

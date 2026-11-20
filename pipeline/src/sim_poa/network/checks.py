@@ -130,7 +130,8 @@ def network_signals(net: Any) -> gpd.GeoDataFrame:
             lon, lat = net.convertXY2LonLat(*node.getCoord())
             rows.append({"tls": tls.getID(), "node": node.getID(), "geometry": Point(lon, lat)})
     frame = gpd.GeoDataFrame(rows, geometry="geometry", crs=4326)
-    return frame.drop_duplicates("node").reset_index(drop=True)
+    # Os nós vêm de um conjunto; a ordem fixa deixa as saídas iguais entre builds.
+    return frame.drop_duplicates("node").sort_values("node").reset_index(drop=True)
 
 
 def _matched(left: gpd.GeoDataFrame, right: gpd.GeoDataFrame) -> np.ndarray:
