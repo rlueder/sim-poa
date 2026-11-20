@@ -7,8 +7,14 @@ the way.
 
 ## Current status
 
-Phase 0 (project setup and data acquisition), in progress. Branch
-`feat/fase-0`. Decisions recorded under "Phase 0: decisions".
+- **Phase 0** merged in PR #1 on 20 November 2026. Still open: the full
+  download (running) and the manifest commit, on branch
+  `chore/manifesto-dados`.
+- **Phase 1** (atlas of observed data), in progress on branch
+  `feat/fase-1-atlas`, nothing committed yet. All eight modules and seven site
+  views are built and tested on downloaded and scratch copies of the data;
+  the final build waits for the full download. Decisions recorded under
+  "Phase 1: decisions".
 
 ## Phase 0: what was found before planning
 
@@ -178,3 +184,147 @@ opt-in groups (the inventory samples them instead).
 - **New data worth knowing about** (details in the inventory): a classified
   cordon count around the Centro from October 2021, and two weeks of bus GPS
   in the Centro (October 2019 and July 2021, 4.6 million points).
+
+## Phase 1: what was found before planning
+
+**EDOM 2023 reproduces.** A throwaway read of the trips sheet (26,304 rows)
+expands to 1,732,137 weekday trips with `FE_IDADE_AJ`, against 1,732,140 in
+the report. Mode shares by `MODO_PRINC` match the report's to the decimal:
+car driver 25.1%, walk 24.0%, bus 21.4%, car passenger 12.9%, ride-hailing
+9.6%, school transport 2.0%, motorcycle 1.6%, bicycle 1.4%.
+
+Things the parser must handle:
+
+- **Codes stored as dates.** Excel formats some numeric columns as dates, so
+  mode code `10` reads as `1900-01-10` and travel time `45` as `1900-02-14`.
+  Serial numbers below 60 need Excel's 1900 epoch rule (day 1 is 1900-01-01);
+  converting with the usual 1899-12-30 epoch shifts every code by one, which
+  is how the first attempt mislabelled every mode.
+- **Peak hour has the report's own definition.** Counting trips that start
+  between 07:00 and 08:00 gives 209,037, while the report gives 164,368 for
+  its morning peak hour. The sheet carries an `HPM` flag and `FE_HPM` factor
+  for that peak; the parser reconciles with those instead of inventing a
+  window.
+- `HOR_O` and `HOR_D` are proper times; coordinates are rounded to three
+  decimals; a dictionary sheet names every column.
+
+**Count templates** are described in [DATA_INVENTORY.md](DATA_INVENTORY.md):
+the EPTC 15-minute template (1998 to now, classes `VL`, `VM`, `VP`, `MT`), the
+developer template (classes `CA`, `LT`, `O`, `CM`, from 06:00), a consultancy
+layout, the Centro study variant (`CA`, `TX`, `LT`, `O`, `CM`), and hourly
+pedestrian and cyclist templates.
+
+**Locating count sites.** Only some workbooks have a `GEO` sheet with
+coordinates. The rest name the intersection in the filename and header
+(`Azenha x Botafogo`). These can be placed offline by intersecting the two
+named streets in the EPTC centreline layer, after normalising abbreviations
+(`Av.`, `R.`, `Gen.`, missing accents).
+
+**Basemap.** [OpenFreeMap](https://openfreemap.org/) serves OpenStreetMap
+vector tiles with no key, registration or request limit, and its styles work
+with MapLibre. Attribution: OpenFreeMap, © OpenMapTiles, data from
+OpenStreetMap.
+
+## Phase 1: design
+
+**Pipeline** (`pipeline/src/sim_poa/atlas/`). One command, `pnpm atlas:build`,
+reads `data/raw/` and writes two kinds of output:
+
+- `data/derived/` (not committed, rebuilt on demand): tidy Parquet and
+  GeoParquet tables at full resolution, such as every count interval and
+  every survey trip.
+- `site/public/data/` (committed): compact files the site loads, aggregated
+  and simplified, with a size budget of 10 MB in total. Committing them means
+  the site builds in CI without the 3 GB download.
+
+Modules:
+
+| Module    | Input                                     | Site output                                                                                                            |
+| --------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `edom`    | EDOM 2023 workbook and zones              | Trips by zone and hour, mode share by zone, desire lines between zones above a threshold, departure profile by purpose |
+| `counts`  | Vehicle, pedestrian and cyclist workbooks | Sites with their 15-minute or hourly profiles; a parse report listing every file                                       |
+| `speeds`  | Spot-speed workbooks                      | Sites with median and 85th-percentile speed against the posted limit                                                   |
+| `geocode` | `GEO` sheets, EPTC centrelines            | Location and method for every count and speed site, or the reason it failed                                            |
+| `cameras` | Speed-camera points and the yearly PDFs   | Typical-day flow by site and month                                                                                     |
+| `transit` | GTFS                                      | Bus trips per hour by route and by street segment                                                                      |
+| `bus_gps` | Centro bus GPS, October 2019 week         | Bus speed by street segment and hour in the Centro                                                                     |
+| `supply`  | Área Azul, signals, bus corridors         | Simplified layers                                                                                                      |
+| `crashes` | Crash records 2021 onward                 | Counts on a 250 m grid, by year and severity                                                                           |
+
+The bus GPS view is not in the guide's minimum list; it is the only observed
+speed by time of day available and is cheap to add. The July 2021 week stays
+out of the atlas because it falls in the pandemic window.
+
+**Site.** Views for trips, counts, speeds, buses, supply and crashes, each a
+MapLibre map with an OpenFreeMap basemap plus charts, in pt-BR. Every view
+shows its sources and the EPTC attribution. Survey views show zones only.
+
+**Focus corridors** (decision 4). The pipeline tags count and speed sites
+within 150 m of Av. Carlos Gomes, Av. Protásio Alves, Av. Ipiranga and Av.
+Nilo Peçanha / Av. Nilópolis, and the site can filter to them.
+
+## Phase 1: acceptance criteria
+
+- [x] EDOM expansion reproduces the report: total within 1% of 1,732,140;
+      each of the eight main mode shares within 1 percentage point; morning
+      peak 07:00 to 08:00 using the report's definition, with its total
+      within 1% of 164,368; evening peak 17:30 to 18:30 by the report's method,
+      with the method written down. Evidence: 12 of 12 checks pass
+      (`site/public/data/edom/validation.json`, shown in the site). Total
+      1,732,137; shares exact to 0.1 point; motorised morning peak 07:00 with
+      164,383; evening peak 17:30. Change to the criterion: the workbook has no
+      `HPM` columns, so the method was recovered by testing (arrival time,
+      one-hour windows in 15-minute steps) and is written down in
+      `docs/ASSUMPTIONS.md` and `DATA_INVENTORY.md`.
+- [ ] The count parser writes a report listing every workbook found, read or
+      not, with the reason for each unread one. Each template has a test with
+      a small fixture. Done in code (`data/reports/counts.csv`, tests for the
+      EPTC, developer, pedestrian and cyclist templates); waiting for the full
+      download to run it on every workbook.
+- [ ] Every count and speed site has a location and the method used, or is
+      listed as unresolved with the reason. The site has a spot-check map
+      coloured by method. Done in code; on the partial download, 1,052 of 1,153
+      readable speed surveys (91%) and 18 of 20 sample counts are located.
+- [ ] Sites near each focus corridor are listed. Done in code
+      (`data/reports/focus_corridors.csv`, all modules); waiting for the full
+      download.
+- [ ] `pnpm atlas:build` regenerates `site/public/data/` from `data/raw/`;
+      the site builds to static files, runs locally with one command and loads
+      its data without a backend; `site/public/data/` stays under 10 MB.
+- [x] Every view names its sources with attribution to EPTC where its data is
+      used; no file in the repository or the built site holds survey records
+      below zone level. Evidence: every view ends with `SourceNote`, checked
+      in the view tests; the EDOM outputs are zone summaries and zone pairs
+      with at least 5 records (`edom/*.json`).
+- [ ] CI is green on the phase 1 pull request.
+
+Out of scope: any simulation, the SUMO network, and calibration.
+
+## Phase 1: decisions (20 November 2026)
+
+1. **Python dependencies approved and installed**: `pandas`, `pyarrow`,
+   `geopandas`, `openpyxl`, `xlrd`, `pdfplumber`.
+2. **Site dependencies approved and installed**: `maplibre-gl`,
+   `@precisa-saude/ui`, `@base-ui/react`, `recharts`.
+3. **Generated site data is committed** (`site/public/data/`, under 10 MB).
+   The maintainer asked whether the datasus-viz approach (Parquet on S3,
+   queried in the browser with DuckDB-WASM) fits better. Not for phase 1:
+   the atlas needs summaries and per-site profiles that fit in a few MB of
+   static files, while DuckDB-WASM alone adds several MB of WebAssembly to
+   download. It starts to pay off when a view needs ad hoc queries over
+   detail too large to commit, such as every 15-minute count interval, the
+   full bus GPS, or per-edge, per-hour results across scenarios and seeds in
+   phases 5 and 6. To keep that path open, `data/derived/` is written as
+   Parquet from the start. The storage would be Cloudflare R2 next to the
+   Pages site rather than the Precisa Saúde S3 bucket, which belongs to the
+   company.
+4. **Publish the site** on Cloudflare Pages through the existing
+   `deploy-site` job. It needs the maintainer to create the Pages project and
+   add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as repository
+   secrets. Without `SLACK_DEPLOY_WEBHOOK_URL`, the job's Slack step will fail
+   after each deploy even when the deploy itself succeeds.
+5. **Approved on 20 November 2026**: the phase 1 commits; `lucide-react`, so
+   the site uses the shared navigation components instead of a local copy;
+   `pandas-stubs` as a development dependency, so mypy checks pandas code.
+   The maintainer creates the Cloudflare Pages project and the repository
+   secrets for publishing.
