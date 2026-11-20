@@ -32,7 +32,7 @@ FOCUS_CORRIDORS: dict[str, list[str]] = {
     "Av. Nilo Peçanha / Av. Nilópolis": ["NILO PECANHA", "NILOPOLIS"],
 }
 CORRIDOR_METRES = 150.0
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 
 
 @dataclass
@@ -58,8 +58,13 @@ def _sha256(path: Path) -> str:
 def parse_cached(
     path: Path, source: str, relative: str, cache: Path
 ) -> tuple[counts.CountFile, pd.DataFrame | None]:
-    """Lê uma planilha, reaproveitando o resultado anterior se o arquivo não mudou."""
-    key = f"v{CACHE_VERSION}-{_sha256(path)}"
+    """Lê uma planilha, reaproveitando o resultado anterior se o arquivo não mudou.
+
+    O caminho entra na chave: a data pode vir da pasta (`plausible_date`), então
+    a mesma planilha em outra pasta precisa ser lida de novo.
+    """
+    where = hashlib.sha256(relative.encode("utf-8")).hexdigest()[:12]
+    key = f"v{CACHE_VERSION}-{_sha256(path)}-{where}"
     meta_file, data_file = cache / f"{key}.json", cache / f"{key}.parquet"
     if meta_file.exists():
         meta = json.loads(meta_file.read_text(encoding="utf-8"))

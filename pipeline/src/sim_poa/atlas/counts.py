@@ -143,6 +143,36 @@ def parse_date(value: Any) -> dt.date | None:
     return None
 
 
+FIRST_SURVEY_YEAR = 1990
+_YEAR_FOLDER = re.compile(r"^(19|20)\d\d$")
+
+
+def plausible_date(date: dt.date | None, info: CountFile) -> dt.date | None:
+    """Descarta anos impossíveis digitados na planilha ("0207-06-21").
+
+    Se o caminho tiver uma pasta de ano cujos algarismos contêm os do ano
+    digitado na ordem (208 em 2008), vale o ano da pasta. Sem isso a data fica
+    vazia: entre 2007 e 2017, por exemplo, não há como escolher.
+    """
+    if date is None or FIRST_SURVEY_YEAR <= date.year <= dt.date.today().year:
+        return date
+    typed = str(date.year)
+    for part in Path(info.path).parts[:-1]:
+        if _YEAR_FOLDER.match(part) and _is_subsequence(typed, part):
+            info.flags.append("ano-corrigido-pela-pasta")
+            return date.replace(year=int(part))
+    info.flags.append("data-invalida")
+    return None
+
+
+def _is_subsequence(short: str, long: str) -> bool:
+    # `char in remaining` consome o iterador até achar o caractere, então cada
+    # busca recomeça depois da anterior e a ordem é respeitada: "208" está em
+    # "2008", mas não em "2800".
+    remaining = iter(long)
+    return all(char in remaining for char in short)
+
+
 def interval_start(row: list[Any]) -> tuple[int, int] | None:
     """Início do intervalo em minutos e sua duração, a partir do começo da linha."""
     if not row:
@@ -276,7 +306,7 @@ def parse_blocks_workbook(path: Path, info: CountFile, sheet: str) -> pd.DataFra
     info.template = "blocos-horarios" if grid and _is_hourly(grid, blocks) else "blocos"
     info.site = text(_label_value(grid, blocks[0].header_row, "LOCAL"))
     raw_date = _label_value(grid, blocks[0].header_row, "DATA")
-    date = parse_date(raw_date)
+    date = plausible_date(parse_date(raw_date), info)
     from_name = year_month_from_name(path.name)
     if date is not None:
         info.date, info.date_from, info.year, info.month = (
