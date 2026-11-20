@@ -156,3 +156,72 @@ def test_zone_summary_splits_hours_and_groups() -> None:
     assert by_hour[7] == 30 and by_hour[8] == 10
     assert sum(by_hour) == summary.loc[1, "produced"]
     assert summary.loc[1, "mode_share"] == {"individual": 0.75, "ativo": 0.25}
+
+
+def _zones_zip(tmp_path: Path) -> Path:
+    """Três polígonos como no ZONAS_OD.zip: zonas 1 e 10 e uma do resto do estado."""
+    import zipfile
+
+    import geopandas as gpd
+    from shapely.geometry import box
+
+    frame = gpd.GeoDataFrame(
+        {"ZT": ["1", "10", "E4300001"], "CD_MUN": ["4314902", "4314902", "4300001"]},
+        geometry=[
+            box(-51.25, -30.05, -51.20, -30.00),
+            box(-51.20, -30.05, -51.15, -30.00),
+            box(-51.15, -30.05, -51.10, -30.00),
+        ],
+        crs=4326,
+    ).to_crs(31982)
+    folder = tmp_path / "zonas"
+    folder.mkdir()
+    frame.to_file(folder / "ZONAS_OD.shp")
+    target = tmp_path / "ZONAS_OD.zip"
+    with zipfile.ZipFile(target, "w") as out:
+        for part in folder.iterdir():
+            out.write(part, part.name)
+    return target
+
+
+def test_locate_trips_uses_coordinates_not_survey_codes(tmp_path: Path) -> None:
+    trips = pd.DataFrame(
+        {
+            # Os códigos da planilha estão "trocados" de propósito: 2 é a zona 10.
+            "survey_zone_o": [1, 2, 2],
+            "survey_zone_d": [2, 1, 1],
+            "lat_o": [-30.02, -30.02, -30.02],
+            "lon_o": [-51.22, -51.17, -51.17],
+            "lat_d": [-30.02, -30.02, -30.02],
+            "lon_d": [-51.17, -51.12, -51.30],
+        }
+    )
+    located = edom.locate_trips(trips, _zones_zip(tmp_path))
+    assert located["zone_o"].tolist() == [1, 10, 10]
+    # Zona sem número (resto do estado) e ponto fora de todos os polígonos ficam sem zona.
+    assert located["zone_d"].iloc[0] == 10
+    assert pd.isna(located["zone_d"].iloc[1])
+    assert pd.isna(located["zone_d"].iloc[2])
+
+
+def test_read_trips_keeps_coordinates_and_survey_codes(tmp_path: Path) -> None:
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws.title = edom.SHEET_TRIPS
+    ws.append([*HEADER, "LAT_O", "LONG_O", "LAT_D", "LONG_D"])
+    ws.append(
+        [*_trip("1", 2, 3, "07:00", "07:30", 10, 5.0, "TRABALHO"), -30.02, -51.17, -30.03, -51.22]
+    )
+    path = tmp_path / "edom.xlsx"
+    wb.save(path)
+    trips = edom.read_trips(path)
+    row = trips.iloc[0]
+    assert (row["survey_zone_o"], row["survey_zone_d"]) == (2, 3)
+    assert (row["lat_o"], row["lon_o"], row["lat_d"], row["lon_d"]) == (
+        -30.02,
+        -51.17,
+        -30.03,
+        -51.22,
+    )
+    assert "zone_o" not in trips.columns

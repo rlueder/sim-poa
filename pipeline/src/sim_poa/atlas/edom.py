@@ -44,6 +44,7 @@ MOTORIZED_MAX_CODE = 14
 # Número mínimo de registros da amostra por par de zonas publicado no site.
 # Pares com menos registros são ruído de expansão e, somados, ficam em "outros".
 MIN_RECORDS_PER_PAIR = 5
+MIN_LOCATED_SHARE = 0.99
 
 
 @dataclass(frozen=True)
@@ -112,8 +113,18 @@ def read_trips(workbook: Path) -> pd.DataFrame:
                 {
                     "trip_id": str(row[index["ID_DESL"]]),
                     "person_id": str(row[index["ID_MOR"]]),
-                    "zone_o": as_code(row[index["ZONA_O"]]),
-                    "zone_d": as_code(row[index["ZONA_D"]]),
+                    # O código de zona da planilha não é o número da zona no
+                    # ZONAS_OD.zip (ver `locate_trips`); fica só para conferência.
+                    "survey_zone_o": as_code(row[index["ZONA_O"]]),
+                    "survey_zone_d": as_code(row[index["ZONA_D"]]),
+                    **{
+                        f"{axis}_{end}": as_number(row[index[column]]) if column in index else None
+                        for end in ("o", "d")
+                        for axis, column in (
+                            ("lat", f"LAT_{end.upper()}"),
+                            ("lon", f"LONG_{end.upper()}"),
+                        )
+                    },
                     "depart_min": depart,
                     "arrive_min": arrive,
                     "mode": as_code(row[index["MODO_PRINC"]]),
@@ -130,6 +141,32 @@ def read_trips(workbook: Path) -> pd.DataFrame:
     if trips["weight"].isna().any():
         raise ValueError(f"{int(trips['weight'].isna().sum())} viagens sem fator de expansão")
     return trips
+
+
+def locate_trips(trips: pd.DataFrame, zones_zip: Path) -> pd.DataFrame:
+    """Zona de origem e de destino de cada viagem, pela coordenada.
+
+    Os códigos `ZONA_O` e `ZONA_D` da planilha não seguem a numeração do
+    `ZONAS_OD.zip`: parecem ser a posição do número da zona em ordem de texto
+    (1, 10, 100, 1000, 101...), com algumas zonas divididas, e o dicionário não
+    os define. Só 2,3% das pontas com código de 1 a 106 caem no polígono de
+    mesmo número. As coordenadas (arredondadas a uns 100 m) caem no polígono
+    certo; uma ponta fora de todos os polígonos, ou numa zona sem número (o
+    resto do estado), fica sem zona.
+    """
+    zones = gpd.read_file(f"zip://{zones_zip}")
+    zones["zone"] = pd.to_numeric(zones["ZT"], errors="coerce").astype("Int64")
+    zones = zones.dropna(subset=["zone"]).to_crs(4326)[["zone", "geometry"]]
+    located = trips.copy()
+    for end in ("o", "d"):
+        lat, lon = located[f"lat_{end}"], located[f"lon_{end}"]
+        points = gpd.GeoDataFrame(
+            index=located.index, geometry=gpd.points_from_xy(lon, lat), crs=4326
+        )
+        joined = gpd.sjoin(points[lat.notna() & lon.notna()], zones, predicate="within")
+        joined = joined[~joined.index.duplicated(keep="first")]
+        located[f"zone_{end}"] = joined["zone"].reindex(located.index).astype("Int64")
+    return located
 
 
 def peak_by_arrival(
@@ -198,6 +235,17 @@ def validate(trips: pd.DataFrame) -> list[Check]:
                 f"relatório: {_clock(start)}, tolerância de 1%",
             )
         )
+    ends = len(trips) * 2
+    located = int(trips["zone_o"].notna().sum() + trips["zone_d"].notna().sum())
+    checks.append(
+        Check(
+            "Pontas de viagem localizadas numa zona pela coordenada",
+            located,
+            float(ends),
+            located >= MIN_LOCATED_SHARE * ends,
+            f"mínimo de {MIN_LOCATED_SHARE:.0%}; as outras ficam fora dos mapas por zona",
+        )
+    )
     unzoned = trips["zone_o"].isna() | trips["zone_d"].isna()
     checks.append(
         Check(

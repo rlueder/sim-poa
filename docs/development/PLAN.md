@@ -308,6 +308,15 @@ Nilo Peçanha / Av. Nilópolis, and the site can filter to them.
 
 Out of scope: any simulation, the SUMO network, and calibration.
 
+## Phase 1: fix after merge (20 November 2026)
+
+The atlas placed survey trips in zones by the survey's zone code, which
+follows a different numbering from `ZONAS_OD.zip` (see `DATA_INVENTORY.md`).
+Per-zone trip counts were off by a median of 64%, and 63 of the 106 zones by
+more than half. Trip ends now get their zone from their coordinates (99.8%
+placed), and a check in the EDOM validation fails the build if fewer than 99%
+of ends are placed. Found while planning phase 3.
+
 ## Phase 1: decisions (20 November 2026)
 
 1. **Python dependencies approved and installed**: `pandas`, `pyarrow`,

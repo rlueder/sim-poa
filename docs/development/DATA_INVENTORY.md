@@ -187,6 +187,20 @@ Checked on 20 November 2026 against the downloaded files.
 - **Crashes.** 84,232 records from 2021 to the date of the file, all with
   coordinates; 2026 is a partial year.
 
+## Found after phase 2: EDOM zone codes
+
+The trip sheet's `ZONA_O` and `ZONA_D` do not use the numbering of
+`ZONAS_OD.zip`, and the dictionary does not define them. Codes 1 to 154 appear;
+mapping each code to the polygon where most of its trip coordinates fall gives
+zone numbers in text order (code 1 is zone 1, 2 is 10, 3 is 100, 4 is 1000,
+Novo Hamburgo), with some pairs of codes in one polygon and city zone 27 with
+no code. Codes 107 to 126 are city zones; codes 127 to 154 are municipalities
+outside the metropolitan region. Only 2.3% of trip ends coded 1 to 106 fall in
+the polygon with that number. Phase 1 joined codes to polygons directly, so the
+zone maps and desire lines were wrong until the zones were taken from the
+coordinates; the report checks (totals, mode shares, peak hours) do not use
+zones and were not affected.
+
 ## Not checked yet
 
 - Mesoscopic support for parking areas and rerouters (guide section 4.5).
