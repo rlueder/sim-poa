@@ -32,7 +32,7 @@ FOCUS_CORRIDORS: dict[str, list[str]] = {
     "Av. Nilo Peçanha / Av. Nilópolis": ["NILO PECANHA", "NILOPOLIS"],
 }
 CORRIDOR_METRES = 150.0
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 
 
 @dataclass
