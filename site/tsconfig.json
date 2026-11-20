@@ -1,0 +1,10 @@
+{
+  "extends": "@precisa-saude/tsconfig/react",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts", "vitest.config.ts"]
+}

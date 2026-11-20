@@ -14,5 +14,6 @@
   "siteFilter": "@sim-poa/site",
   "siteProjectName": "sim-poa",
   "name": "sim-poa",
-  "owner": "rlueder"
+  "owner": "rlueder",
+  "siteSourcePath": ["site/"]
 }

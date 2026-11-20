@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+@import '@precisa-saude/themes';
+
+/* Os tokens do pacote de temas são variáveis CSS comuns; este bloco os expõe
+   como cores e raios do Tailwind. As fontes e a marca da Precisa Saúde não
+   são usadas aqui: este não é um produto da empresa. */
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-background: var(--background);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+}
