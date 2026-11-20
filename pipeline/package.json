@@ -10,6 +10,7 @@
     "format": "sh scripts/uv.sh run --frozen ruff format .",
     "format:check": "sh scripts/uv.sh run --frozen ruff format --check .",
     "lint": "sh scripts/uv.sh run --frozen ruff check .",
+    "network:build": "sh scripts/uv.sh run --frozen sim-poa network",
     "test": "sh scripts/uv.sh run --frozen pytest",
     "typecheck": "sh scripts/uv.sh run --frozen mypy"
   }

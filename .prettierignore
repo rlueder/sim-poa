@@ -6,5 +6,6 @@ coverage
 pnpm-lock.yaml
 CHANGELOG.md
 
-# Gerado por pnpm atlas:build, gravado compacto de propósito.
+# Gerado por pnpm atlas:build e pnpm network:build, gravado compacto de propósito.
 site/public/data/
+data/reports/

@@ -12,6 +12,8 @@ coverage
 # Dados brutos: grandes e ainda mudando no servidor. `pnpm data:fetch` os
 # reconstrói a partir de data/sources.toml; data/manifest.csv é versionado.
 data/raw/
+# Rede do SUMO e rotas de conferência: dezenas de MB, refeitos por `pnpm network:build`.
+data/derived/
 *.part
 
 # Python (pipeline/)

@@ -44,7 +44,7 @@ files = ["src", "tests"]
 # Pacotes sem tipos publicados. Pacotes de stubs (types-openpyxl e afins)
 # seriam dependências novas; até lá, o mypy os trata como não tipados.
 [[tool.mypy.overrides]]
-module = ["geopandas.*", "openpyxl.*", "xlrd.*", "pyarrow.*", "pdfplumber.*", "shapely.*", "pyproj.*", "pyogrio.*"]
+module = ["geopandas.*", "openpyxl.*", "xlrd.*", "pyarrow.*", "pdfplumber.*", "shapely.*", "pyproj.*", "pyogrio.*", "sumo.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
