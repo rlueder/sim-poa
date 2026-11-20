@@ -46,7 +46,8 @@ def speeds_by_segment(
     joined = gpd.sjoin_nearest(points, streets, max_distance=SNAP_METRES, how="inner")
     # Um ponto equidistante de dois eixos volta duas vezes, com o mesmo índice;
     # fica a primeira correspondência.
-    joined = joined[~joined.index.duplicated(keep="first")]
+    ties = joined.index.duplicated(keep="first")
+    joined = joined[~ties]
     joined["moving"] = joined["kmh"].gt(MOVING_KMH)
     rows = []
     for (segment, hour), group in joined.groupby(["CDSEG", "hour"]):
@@ -67,6 +68,7 @@ def speeds_by_segment(
         "days": [FIRST_DAY.isoformat(), LAST_DAY.isoformat()],
         "points": len(points),
         "snapped": len(joined),
+        "equidistant_ties": int(ties.sum()),
         "segments": int(table["segment"].nunique()) if len(table) else 0,
     }
     if table.empty:

@@ -198,6 +198,16 @@ def validate(trips: pd.DataFrame) -> list[Check]:
                 f"relatório: {_clock(start)}, tolerância de 1%",
             )
         )
+    unzoned = trips["zone_o"].isna() | trips["zone_d"].isna()
+    checks.append(
+        Check(
+            "Viagens sem zona de origem ou destino",
+            int(unzoned.sum()),
+            float("nan"),
+            True,
+            "entram no total do dia, mas não nos mapas por zona nem nas linhas de desejo",
+        )
+    )
     untimed = trips["depart_min"].isna() | trips["arrive_min"].isna()
     checks.append(
         Check(

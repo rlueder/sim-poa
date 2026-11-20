@@ -24,6 +24,7 @@ const Responsive = ResponsiveContainer as unknown as ChartContainerProps['Respon
 
 const FLAG_LABELS: Record<string, string> = {
   '24h': 'contagem de 24 horas',
+  'celulas-com-texto': 'há células de contagem com texto, que ficaram de fora',
   'data-diverge-do-nome': 'a data da planilha difere da do nome do arquivo',
   'fim-de-semana': 'fim de semana',
   incompleta: 'pesquisa incompleta',

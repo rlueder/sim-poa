@@ -265,6 +265,18 @@ def build_cameras(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
     for path in pdfs:
         relative = str(path.relative_to(raw_dir / "relatorios-mensais"))
         if cameras.kind_of(path.name) is None:
+            # Outros relatórios da pasta (frota, BikePOA, congestionamento) ficam
+            # registrados como ignorados, para um PDF de fluxo renomeado não sumir.
+            pdf_rows.append(
+                {
+                    "path": relative,
+                    "kind": "ignorado",
+                    "year": None,
+                    "rows": 0,
+                    "skipped_lines": 0,
+                    "first_skipped": "",
+                }
+            )
             continue
         parsed = cameras.parse_pdf(path, relative)
         pdf_rows.append(
@@ -327,9 +339,11 @@ def build_cameras(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
             for s in sites.values()
         ],
     )
-    skipped = sum(int(r["rows"] == 0) for r in pdf_rows)
+    read_pdfs = [r for r in pdf_rows if r["kind"] != "ignorado"]
+    skipped = sum(int(r["rows"] == 0) for r in read_pdfs)
     report.notes.append(
-        f"controladores: {len(pdf_rows)} relatórios em PDF ({skipped} sem linhas lidas), "
+        f"controladores: {len(read_pdfs)} relatórios de fluxo em PDF ({skipped} sem linhas lidas, "
+        f"{len(pdf_rows) - len(read_pdfs)} outros PDFs ignorados), "
         f"{len(sites)} equipamentos, {len(published)} localizados"
     )
     report.files["cameras/sites.json"] = write_json(

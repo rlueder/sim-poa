@@ -60,6 +60,17 @@ def test_blocks_template_reads_flows_classes_and_intervals(tmp_path: Path) -> No
     assert first["count"].tolist() == [10.0]
 
 
+def test_text_in_count_cells_is_counted_and_flagged(tmp_path: Path) -> None:
+    path = _blocks_workbook(tmp_path / "(VEÍCULOS) 2019-03 T.xlsx", classes=["VL", "VM"])
+    wb = openpyxl.load_workbook(path)
+    wb["DADOS"].cell(6, 2, "n/c")
+    wb["DADOS"].cell(7, 3, "-")
+    wb.save(path)
+    info, _ = counts.parse_workbook(path, "x", "Veículos/" + path.name)
+    assert info.text_cells == 1
+    assert "celulas-com-texto" in info.flags
+
+
 def test_pedestrian_header_variant(tmp_path: Path) -> None:
     path = _blocks_workbook(
         tmp_path / "(PEDESTRES) 2017-10 Teste.xls.xlsx",

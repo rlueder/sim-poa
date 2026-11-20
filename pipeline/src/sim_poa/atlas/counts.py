@@ -61,6 +61,8 @@ class CountFile:
     classes: str = ""
     movements: int = 0
     intervals: int = 0
+    # Células de contagem com texto em vez de número: ficam fora e entram aqui.
+    text_cells: int = 0
     flags: list[str] = field(default_factory=list)
 
     def as_row(self) -> dict[str, Any]:
@@ -249,6 +251,22 @@ def read_blocks(grid: Grid, blocks: list[Block]) -> pd.DataFrame:
     )
 
 
+def count_text_cells(grid: Grid, blocks: list[Block]) -> int:
+    """Células de contagem preenchidas com algo que não é número nem traço."""
+    found = 0
+    for index, block in enumerate(blocks):
+        stop = blocks[index + 1].header_row if index + 1 < len(blocks) else len(grid)
+        for row in grid[block.header_row + 2 : stop]:
+            if interval_start(row) is None:
+                continue
+            for _, columns in block.movements:
+                for column, _ in columns:
+                    value = row[column] if column < len(row) else None
+                    if _number(value) is None and text(value) not in ("", "-"):
+                        found += 1
+    return found
+
+
 def parse_blocks_workbook(path: Path, info: CountFile, sheet: str) -> pd.DataFrame | None:
     grid = read_sheet(path, sheet)
     blocks = find_blocks(grid)
@@ -273,6 +291,9 @@ def parse_blocks_workbook(path: Path, info: CountFile, sheet: str) -> pd.DataFra
     if date is not None and from_name is not None and (date.year, date.month) != from_name:
         info.flags.append("data-diverge-do-nome")
     counts = read_blocks(grid, blocks)
+    info.text_cells = count_text_cells(grid, blocks)
+    if info.text_cells:
+        info.flags.append("celulas-com-texto")
     if counts.empty:
         info.status, info.reason = "empty", "blocos sem nenhuma contagem preenchida"
         return None

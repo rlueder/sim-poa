@@ -151,5 +151,8 @@ def test_zone_summary_splits_hours_and_groups() -> None:
     summary = edom.zone_summary(trips).set_index("zone")
     assert summary.loc[1, "produced"] == 40
     assert summary.loc[2, "attracted"] == 40
-    assert cast(list[float], summary.loc[1, "produced_by_hour"])[7] == 30
+    by_hour = cast(list[float], summary.loc[1, "produced_by_hour"])
+    assert len(by_hour) == 24
+    assert by_hour[7] == 30 and by_hour[8] == 10
+    assert sum(by_hour) == summary.loc[1, "produced"]
     assert summary.loc[1, "mode_share"] == {"individual": 0.75, "ativo": 0.25}
