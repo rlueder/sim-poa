@@ -264,3 +264,18 @@ def test_plausible_date(
     info = counts.CountFile(source="teste", path=path, subject="veiculos")
     assert counts.plausible_date(typed, info) == expected
     assert info.flags == ([flag] if flag else [])
+
+
+@pytest.mark.parametrize(
+    ("typed", "folder", "expected"),
+    [
+        ("208", "2008", True),
+        ("207", "2017", True),
+        ("208", "2800", False),
+        ("208", "0282", False),
+        ("028", "2008", False),
+        ("207", "2019", False),
+    ],
+)
+def test_year_digits_must_appear_in_order(typed: str, folder: str, expected: bool) -> None:
+    assert counts._is_subsequence(typed, folder) is expected
