@@ -188,16 +188,19 @@ def test_locate_trips_uses_coordinates_not_survey_codes(tmp_path: Path) -> None:
     trips = pd.DataFrame(
         {
             # Os códigos da planilha estão "trocados" de propósito: 2 é a zona 10.
-            "survey_zone_o": [1, 2, 2],
-            "survey_zone_d": [2, 1, 1],
-            "lat_o": [-30.02, -30.02, -30.02],
-            "lon_o": [-51.22, -51.17, -51.17],
-            "lat_d": [-30.02, -30.02, -30.02],
-            "lon_d": [-51.17, -51.12, -51.30],
+            "survey_zone_o": [1, 2, 2, 1],
+            "survey_zone_d": [2, 1, 1, 2],
+            "lat_o": [-30.02, -30.02, -30.02, None],
+            "lon_o": [-51.22, -51.17, -51.17, None],
+            "lat_d": [-30.02, -30.02, -30.02, -30.02],
+            "lon_d": [-51.17, -51.12, -51.30, -51.17],
         }
     )
     located = edom.locate_trips(trips, _zones_zip(tmp_path))
-    assert located["zone_o"].tolist() == [1, 10, 10]
+    assert located["zone_o"].tolist()[:3] == [1, 10, 10]
+    # Sem coordenada, sem zona; a outra ponta da mesma viagem é localizada.
+    assert pd.isna(located["zone_o"].iloc[3])
+    assert located["zone_d"].iloc[3] == 10
     # Zona sem número (resto do estado) e ponto fora de todos os polígonos ficam sem zona.
     assert located["zone_d"].iloc[0] == 10
     assert pd.isna(located["zone_d"].iloc[1])

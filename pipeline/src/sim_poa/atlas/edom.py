@@ -152,7 +152,11 @@ def locate_trips(trips: pd.DataFrame, zones_zip: Path) -> pd.DataFrame:
     os define. Só 2,3% das pontas com código de 1 a 106 caem no polígono de
     mesmo número. As coordenadas (arredondadas a uns 100 m) caem no polígono
     certo; uma ponta fora de todos os polígonos, ou numa zona sem número (o
-    resto do estado), fica sem zona.
+    resto do estado), fica sem zona: na base de 2023 são 96 de 52.608 pontas
+    (0,2%), e `validate` falha se passarem de 1%. Não há atribuição pela zona
+    mais próxima, para uma coordenada errada não virar uma zona errada. As
+    zonas do arquivo não se sobrepõem (nenhuma ponta cai em duas); se um dia
+    caírem, vale a primeira.
     """
     zones = gpd.read_file(f"zip://{zones_zip}")
     zones["zone"] = pd.to_numeric(zones["ZT"], errors="coerce").astype("Int64")
