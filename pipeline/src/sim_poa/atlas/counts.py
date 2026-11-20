@@ -166,6 +166,9 @@ def plausible_date(date: dt.date | None, info: CountFile) -> dt.date | None:
 
 
 def _is_subsequence(short: str, long: str) -> bool:
+    # `char in remaining` consome o iterador até achar o caractere, então cada
+    # busca recomeça depois da anterior e a ordem é respeitada: "208" está em
+    # "2008", mas não em "2800".
     remaining = iter(long)
     return all(char in remaining for char in short)
 

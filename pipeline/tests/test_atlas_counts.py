@@ -244,6 +244,8 @@ def test_parse_cached_reuses_previous_result(tmp_path: Path) -> None:
     pd.testing.assert_frame_equal(first, again)
 
 
+# As planilhas guardam datas como 0207-06-21; o openpyxl as lê como dt.date(207, 6, 21),
+# que o Python aceita. Os casos abaixo usam datas assim.
 @pytest.mark.parametrize(
     ("path", "typed", "expected", "flag"),
     [

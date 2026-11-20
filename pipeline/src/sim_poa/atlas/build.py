@@ -151,7 +151,8 @@ def build_counts(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
     # deixar o arquivo da build anterior para trás.
     current = {f"{year}.json" for year in profiles}
     for stale in (out / "profiles").glob("*.json"):
-        if stale.name not in current:
+        # Só arquivos de ano ("2019.json", e também o "207.json" de uma data errada).
+        if stale.stem.isdigit() and stale.name not in current:
             stale.unlink()
     for year, by_id in sorted(profiles.items()):
         report.files[f"counts/profiles/{year}.json"] = write_json(
