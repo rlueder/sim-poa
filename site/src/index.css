@@ -19,3 +19,16 @@
   --color-ring: var(--ring);
   --radius-lg: var(--radius);
 }
+
+/* Correção local do SlidingTabs de @precisa-saude/ui 3.5.3 com @base-ui/react 1.9:
+   o indicador recebe as variáveis --active-tab-* mas não as usa, e a aba ativa
+   vem marcada com aria-selected/data-active, não com data-selected=true. Remover
+   quando o pacote compartilhado corrigir. */
+[data-slot='sliding-tabs'] [role='tablist'] > [role='presentation'] {
+  left: var(--active-tab-left);
+  width: var(--active-tab-width);
+}
+
+[data-slot='sliding-tabs'] [role='tab'][aria-selected='true'] {
+  color: var(--foreground);
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from sim_poa.atlas import build as atlas_build
 from sim_poa.fetch import download, sources
 from sim_poa.paths import DATA_DIR_ENV, raw_data_dir, repo_root
 
@@ -56,6 +57,29 @@ def _fetch(args: argparse.Namespace) -> int:
     return 0 if summary.ok else 1
 
 
+def _atlas(args: argparse.Namespace) -> int:
+    modules = args.module or list(atlas_build.BUILDERS)
+    unknown = sorted(set(modules) - atlas_build.BUILDERS.keys())
+    if unknown:
+        print(f"sim-poa: módulo desconhecido: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+    root = repo_root()
+    out_dir = root / "site" / "public" / "data"
+    report = atlas_build.build(raw_data_dir(), out_dir, root / "data" / "reports", modules)
+    for note in report.notes:
+        print(note)
+    print()
+    for name, size in sorted(report.files.items()):
+        print(f"  {size / 1e3:9,.1f} kB  {name}")
+    print(f"  {report.total_bytes / 1e6:9,.2f} MB  total em {out_dir}")
+    if report.checks_failed:
+        print(f"Conferências que falharam: {len(report.checks_failed)}")
+        for name in report.checks_failed:
+            print(f"  {name}")
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sim-poa")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -75,6 +99,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fetch.add_argument("--list", action="store_true", help="lista as fontes e sai")
     fetch.set_defaults(handler=_fetch)
+
+    atlas = commands.add_parser("atlas", help="gera os dados do atlas em site/public/data/")
+    atlas.add_argument(
+        "--module", action="append", help="só este módulo (padrão: todos); repetível"
+    )
+    atlas.set_defaults(handler=_atlas)
     return parser
 
 

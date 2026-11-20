@@ -1,55 +1,88 @@
-import { SOURCES } from './sources';
+import { SlidingTabs } from '@precisa-saude/ui/navigation';
+import { lazy, Suspense, useEffect, useState } from 'react';
+
+// Cada visualização vira um pedaço separado do bundle: quem abre só a aba Sobre não
+// baixa o MapLibre nem o recharts.
+const About = lazy(() => import('./views/About').then((m) => ({ default: m.About })));
+const BusesView = lazy(() =>
+  import('./views/buses/BusesView').then((m) => ({ default: m.BusesView })),
+);
+const CountsView = lazy(() =>
+  import('./views/counts/CountsView').then((m) => ({ default: m.CountsView })),
+);
+const CrashesView = lazy(() =>
+  import('./views/crashes/CrashesView').then((m) => ({ default: m.CrashesView })),
+);
+const SpeedsView = lazy(() =>
+  import('./views/speeds/SpeedsView').then((m) => ({ default: m.SpeedsView })),
+);
+const SupplyView = lazy(() =>
+  import('./views/supply/SupplyView').then((m) => ({ default: m.SupplyView })),
+);
+const TripsView = lazy(() =>
+  import('./views/trips/TripsView').then((m) => ({ default: m.TripsView })),
+);
+
+const VIEWS = [
+  { key: 'viagens', label: 'Viagens' },
+  { key: 'contagens', label: 'Contagens' },
+  { key: 'velocidades', label: 'Velocidades' },
+  { key: 'onibus', label: 'Ônibus' },
+  { key: 'oferta', label: 'Oferta' },
+  { key: 'sinistros', label: 'Sinistros' },
+  { key: 'sobre', label: 'Sobre' },
+] as const;
+
+type ViewKey = (typeof VIEWS)[number]['key'];
+
+function viewFromHash(): ViewKey {
+  const key = window.location.hash.replace('#', '');
+  return VIEWS.some((v) => v.key === key) ? (key as ViewKey) : 'viagens';
+}
 
 export function App() {
+  const [view, setView] = useState<ViewKey>(viewFromHash);
+
+  useEffect(() => {
+    const onHash = () => setView(viewFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const select = (key: string) => {
+    window.location.hash = key;
+    setView(key as ViewKey);
+  };
+
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <main className="mx-auto flex max-w-3xl flex-col gap-10 px-6 py-16">
-        <header className="flex flex-col gap-3">
-          <h1 className="text-4xl font-semibold tracking-tight">sim-poa</h1>
-          <p className="text-muted-foreground text-lg">
-            Simulação aberta do trânsito de Porto Alegre, construída com dados públicos e
-            ferramentas de código aberto.
-          </p>
+      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
+        <header className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-semibold tracking-tight">sim-poa</h1>
+            <p className="text-muted-foreground">
+              Atlas do trânsito observado em Porto Alegre, com dados públicos.
+            </p>
+          </div>
+          <nav aria-label="Visualizações">
+            <SlidingTabs
+              activeKey={view}
+              aria-label="Visualizações"
+              items={[...VIEWS]}
+              onChange={select}
+            />
+          </nav>
         </header>
 
-        <section aria-labelledby="situacao" className="flex flex-col gap-3">
-          <h2 className="text-xl font-semibold" id="situacao">
-            Em construção
-          </h2>
-          <p>
-            A etapa atual reúne os dados públicos de trânsito da cidade. Os mapas do trânsito
-            observado entram aqui na etapa seguinte, e a comparação de cenários (ruas de mão única,
-            estacionamento, cobrança por zona, semáforos) depois da calibração do modelo.
-          </p>
-          <p className="text-muted-foreground">
-            O modelo serve para comparar cenários entre si, com o erro de calibração declarado. Ele
-            não prevê tempos de viagem absolutos em uma rua específica.
-          </p>
-        </section>
-
-        <section aria-labelledby="fontes" className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold" id="fontes">
-            Fontes de dados
-          </h2>
-          <ul className="flex flex-col gap-3">
-            {SOURCES.map((source) => (
-              <li key={source.name}>
-                <a
-                  className="text-primary font-medium underline underline-offset-4"
-                  href={source.href}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {source.name}
-                </a>
-                <p className="text-muted-foreground text-sm">{source.description}</p>
-              </li>
-            ))}
-          </ul>
-          <p className="text-muted-foreground text-sm">
-            Este projeto não tem vínculo com a EPTC nem com a Prefeitura de Porto Alegre.
-          </p>
-        </section>
+        <Suspense fallback={<p aria-busy="true">Carregando…</p>}>
+          {view === 'viagens' && <TripsView />}
+          {view === 'contagens' && <CountsView />}
+          {view === 'velocidades' && <SpeedsView />}
+          {view === 'onibus' && <BusesView />}
+          {view === 'oferta' && <SupplyView />}
+          {view === 'sinistros' && <CrashesView />}
+          {view === 'sobre' && <About />}
+        </Suspense>
 
         <footer className="border-border text-muted-foreground border-t pt-6 text-sm">
           Código aberto sob a licença MIT em{' '}
@@ -61,7 +94,7 @@ export function App() {
           >
             github.com/rlueder/sim-poa
           </a>
-          .
+          . Este projeto não tem vínculo com a EPTC nem com a Prefeitura de Porto Alegre.
         </footer>
       </main>
     </div>

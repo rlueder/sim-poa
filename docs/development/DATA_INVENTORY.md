@@ -145,6 +145,48 @@ converts an OSM fixture with the guide's import options; this runs as a test
 in `pipeline/tests/test_sumo.py`, locally and in CI. `sumo-gui` and `netedit`
 need XQuartz, which was not installed, so the GUI remains untested.
 
+## Found while building the atlas (phase 1)
+
+Checked on 20 November 2026 against the downloaded files.
+
+- **EDOM 2023.** The published workbook has no `HPM`, `FE_HPM`, `BD`/`BDT`
+  columns, although its dictionary lists them; the trips sheet ends at
+  `FE_IDADE_AJ`. The column headed `FE_MOT` is not a motorised-only factor
+  (its total, 1,635,728, is larger than all motorised trips). Fieldwork ran
+  from August 2023 to April 2024 (report section 2), before the May 2024
+  flood. Small numeric codes are stored as Excel dates and must be read back
+  with Excel's 1900 epoch rule.
+- **Peak hour in the EDOM report** counts trips by **arrival** time in
+  one-hour windows stepped every 15 minutes. With that rule the workbook
+  reproduces 07:15 to 08:15 with 220,791 trips (report: 220,815) for all
+  modes, and 07:00 to 08:00 with 164,383 (report: 164,368) for motorised
+  modes (codes 1 to 14). The report does not state the method; it was found
+  by testing departure, arrival, midpoint and in-progress definitions.
+- **Count workbooks.** The `GEO` sheet's longitude and latitude are empty in
+  every workbook sampled (12 from 2009 to 2026), so count sites are placed from
+  the street names. Pedestrian workbooks put the values under `Fora Faixa` in
+  some files and under both classes in others; the classes are kept as
+  recorded. Cyclist class codes (`E F D B P H M C P L`) are not defined in the
+  workbooks.
+- **Speed surveys.** 2003 to 2021, one row per measured vehicle. The posted
+  limit comes from the `FRVT` sheets ("Velocidade Regulamentar do trecho") and
+  takes the values 30, 40, 50 and 60 km/h, consistent with the observed
+  speeds; some 60 km/h values could be a template default. A few sheets hold
+  a time in the address cell; the file name is used instead. In some files the
+  direction in the sheet differs from the one in the file name; the sheet wins.
+- **Speed-camera reports.** PDF only, one per year and equipment type, one
+  line per equipment with twelve monthly typical-weekday averages in UVP. The
+  camera registry (`_MEV_*.zip`) uses the same label and gives coordinates,
+  lane count and limit, so almost every line joins exactly. 2024 and 2025
+  parsed with no unread lines; earlier years are still to be checked.
+- **GTFS.** The calendar runs from 12 September to 12 December 2025 (not 18
+  September to 18 December as section 4.4 of the guide says). Stop times are
+  given only at timing points; the other stops are interpolated.
+- **Bus GPS.** 2,544,717 points on the weekdays of 21 to 25 October 2019; 99.4%
+  lie within 15 m of a street centreline.
+- **Crashes.** 84,232 records from 2021 to the date of the file, all with
+  coordinates; 2026 is a partial year.
+
 ## Not checked yet
 
 - Whether the BBBike extract reaches far enough along the entry highways to
