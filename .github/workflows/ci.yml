@@ -1,0 +1,71 @@
+name: CI/CD
+
+# Esta entrada pertence ao repositório. Triggers, permissões, flags de release
+# e jobs específicos são editados aqui. As implementações compartilhadas são
+# chamadas por SHA; o Renovate propõe atualizações com revisão e CI.
+# `.precisa.json` fornece os valores iniciais durante a criação do repositório.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number for a manual review re-run'
+        required: false
+        type: number
+
+# Cada job declara apenas as permissões necessárias.
+permissions:
+  contents: read
+
+# Cancelar uma publicação pode deixar uma tag sem pacote no registry.
+# Cancelamento automático fica restrito aos PRs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ── CI checks (every PR and push) ──────────────────────────────
+  checks:
+    permissions:
+      contents: read
+    uses: Precisa-Saude/tooling/.github/workflows/_checks.yml@10b35bb653ac5390ed800fa3d182a065ee36b8fb # v3.5.3
+
+  # ── Automated code review (PR, or manual dispatch, after checks) ─
+  review:
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+      models: read
+    needs: checks
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && inputs.pr_number > 0)
+    uses: Precisa-Saude/tooling/.github/workflows/review.yml@10b35bb653ac5390ed800fa3d182a065ee36b8fb # v3.5.3
+    with:
+      # Converte o valor recebido por workflow_dispatch para o tipo number.
+      pr_number: ${{ fromJSON(github.event.pull_request.number || inputs.pr_number || 0) }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+  # ── Deploy site (Cloudflare Pages + Slack notify) ──────────────
+  # Dispatch com pr_number é um re-run de review, não um pedido de deploy —
+  # por isso o guard extra: sem ele, re-rodar o review de um PR redeployava
+  # o site junto.
+  deploy-site:
+    needs: checks
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && !inputs.pr_number)
+    uses: Precisa-Saude/tooling/.github/workflows/_deploy-site.yml@10b35bb653ac5390ed800fa3d182a065ee36b8fb # v3.5.3
+    with:
+      project_name: 'sim-poa'
+      site_filter: '@sim-poa/site'
+      site_source_path: 'site/'
+    secrets: inherit

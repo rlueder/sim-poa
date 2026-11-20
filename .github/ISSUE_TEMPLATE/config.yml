@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vulnerabilidade de segurança
+    url: 'mailto:rlueder@pm.me'
+    about: Reporte questões de segurança em privado — veja SECURITY.md
+  - name: Perguntas e discussões gerais
+    url: 'https://github.com/rlueder/sim-poa/discussions'
+    about: Faça perguntas, compartilhe ideias ou discuta

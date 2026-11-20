@@ -1,0 +1,18 @@
+{
+  "hasPackages": false,
+  "hasSite": true,
+  "nodeVersion": "22",
+  "pnpmVersion": "9.15.9",
+  "publishesToNpm": false,
+  "schemaVersion": 1,
+  "visibility": "oss",
+  "commitScopes": ["site", "pipeline", "sim", "data", "docs", "ci", "deps"],
+  "contactEmails": {
+    "conduct": "rlueder@pm.me",
+    "security": "rlueder@pm.me"
+  },
+  "siteFilter": "@sim-poa/site",
+  "siteProjectName": "sim-poa",
+  "name": "sim-poa",
+  "owner": "rlueder"
+}
