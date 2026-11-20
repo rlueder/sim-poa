@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -35,3 +36,23 @@ def binary(name: str) -> str:
 
 def typemap(name: str) -> Path:
     return sumo_home() / "data" / "typemap" / name
+
+
+class ToolError(RuntimeError):
+    """Uma ferramenta do SUMO terminou com erro; a mensagem traz o fim da saída dela."""
+
+
+def run_tool(
+    command: list[str], cwd: Path | None = None, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    """Roda uma ferramenta do SUMO e, se falhar, mostra o que ela escreveu.
+
+    Com `capture_output`, um `check=True` simples esconderia a mensagem do SUMO
+    atrás de um "returned non-zero exit status".
+    """
+    result = subprocess.run(command, capture_output=True, text=True, check=False, cwd=cwd, env=env)
+    if result.returncode != 0:
+        output = (result.stderr or result.stdout).strip().splitlines()[-20:]
+        name = Path(command[1] if command[0] == sys.executable else command[0]).name
+        raise ToolError(f"{name} falhou (código {result.returncode}):\n" + "\n".join(output))
+    return result

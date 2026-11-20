@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import geopandas as gpd
 import pytest
 from shapely.geometry import LineString, Point, box
@@ -206,3 +209,12 @@ def test_signal_frame_labels_each_signal() -> None:
         "far": "fora do município",
         "gone": "desligado",
     }
+
+
+def test_run_tool_reports_the_tool_output_on_failure(tmp_path: Path) -> None:
+    from sim_poa.network.sumo_env import ToolError, run_tool
+
+    script = tmp_path / "ferramenta.py"
+    script.write_text("import sys\nprint('sem rede', file=sys.stderr)\nsys.exit(3)\n")
+    with pytest.raises(ToolError, match=r"(?s)ferramenta\.py falhou \(código 3\).*sem rede"):
+        run_tool([sys.executable, str(script)])

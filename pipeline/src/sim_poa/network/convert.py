@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import re
-import subprocess
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from sim_poa.network.sumo_env import binary, typemap
+from sim_poa.network.sumo_env import binary, run_tool, typemap
 
 # Opções recomendadas pela documentação do SUMO para importar OSM urbano
 # (Networks/Import/OpenStreetMap), mais nomes de rua e faixas de conversão.
@@ -70,7 +69,7 @@ def write_typemap(path: Path, speeds_kmh: dict[str, float]) -> Path:
 def netconvert(osm_xml: Path, typemap_file: Path, output: Path) -> ConvertResult:
     output.parent.mkdir(parents=True, exist_ok=True)
     log = output.with_suffix(".warnings.log")
-    subprocess.run(
+    run_tool(
         [
             binary("netconvert"),
             "--osm-files",
@@ -86,9 +85,6 @@ def netconvert(osm_xml: Path, typemap_file: Path, output: Path) -> ConvertResult
             "--aggregate-warnings",
             "-1",
         ],
-        check=True,
-        capture_output=True,
-        text=True,
     )
     warnings = [
         line.removeprefix("Warning: ").strip()
@@ -105,5 +101,5 @@ def set_signals(net: Path, output: Path, add: list[str], remove: list[str]) -> P
         command += ["--tls.set", ",".join(add), "--tls.default-type", "actuated"]
     if remove:
         command += ["--tls.unset", ",".join(remove)]
-    subprocess.run(command, check=True, capture_output=True, text=True)
+    run_tool(command)
     return output

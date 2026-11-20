@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import heapq
 import re
-import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -17,7 +16,7 @@ import pandas as pd
 from shapely.geometry import LineString, Point
 from shapely.geometry.base import BaseGeometry
 
-from sim_poa.network.sumo_env import binary, tools_dir, use_sumolib
+from sim_poa.network.sumo_env import binary, run_tool, tools_dir, use_sumolib
 
 METRIC_CRS = 31982
 GATE_CLASSES = frozenset(
@@ -211,7 +210,7 @@ def write_trips(path: Path, pairs: list[tuple[str, str, str]]) -> None:
 
 def route(net_file: Path, trips: Path, output: Path) -> dict[str, list[str]]:
     """Roteia com o duarouter. Viagens sem caminho ficam de fora do resultado."""
-    subprocess.run(
+    run_tool(
         [
             binary("duarouter"),
             "--net-file",
@@ -226,9 +225,6 @@ def route(net_file: Path, trips: Path, output: Path) -> dict[str, list[str]]:
             "--routing-threads",
             "4",
         ],
-        capture_output=True,
-        text=True,
-        check=True,
     )
     routes: dict[str, list[str]] = {}
     for vehicle in ET.parse(output).getroot().iter("vehicle"):
@@ -360,7 +356,7 @@ def smoke_test(
     folder.mkdir(parents=True, exist_ok=True)
     trips = folder / "aleatorias.trips.xml"
     use_sumolib()
-    subprocess.run(
+    run_tool(
         [
             sys.executable,
             str(tools_dir() / "randomTrips.py"),
@@ -385,11 +381,8 @@ def smoke_test(
             "--vehicle-class",
             "passenger",
         ],
-        capture_output=True,
-        text=True,
-        check=True,
     )
-    result = subprocess.run(
+    result = run_tool(
         [
             binary("sumo"),
             "--net-file",
@@ -405,9 +398,6 @@ def smoke_test(
             "--seed",
             "42",
         ],
-        capture_output=True,
-        text=True,
-        check=True,
     )
     return parse_statistics(result.stdout + result.stderr)
 

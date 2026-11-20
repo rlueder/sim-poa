@@ -56,6 +56,12 @@ class NetworkReport:
 
 
 def _single(folder: Path, pattern: str) -> Path:
+    """O arquivo mais recente do padrão.
+
+    Os cadastros da EPTC levam a data no nome (`_EPS_CadastroSemaforico_20261021.zip`)
+    e o extrato do OSM também (`sul-261119.osm.pbf`), então a ordem alfabética é a
+    cronológica. O nome escolhido vai para o relatório.
+    """
     found = sorted(folder.glob(pattern))
     if not found:
         raise FileNotFoundError(f"{pattern} ausente em {folder}; rode pnpm data:fetch")
@@ -167,7 +173,8 @@ def build(raw_dir: Path, derived_dir: Path, site_dir: Path, reports_dir: Path) -
     }
 
     _step("semáforos")
-    inventory = supply.signals(_single(raw_dir / LAYERS_DIR, SIGNALS_PATTERN))
+    inventory_file = _single(raw_dir / LAYERS_DIR, SIGNALS_PATTERN)
+    inventory = supply.signals(inventory_file)
     base_net = checks.load_net(base.net)
     before = checks.compare_signals(checks.network_signals(base_net), inventory)
     fixes = checks.signal_corrections(before, checks.junctions(base_net), city)
@@ -175,6 +182,7 @@ def build(raw_dir: Path, derived_dir: Path, site_dir: Path, reports_dir: Path) -
     net = checks.load_net(net_file)
     after = checks.compare_signals(checks.network_signals(net), inventory)
     summary["signals"] = {
+        "inventory_file": inventory_file.name,
         "before": before.counts,
         "added": len(fixes.add),
         "removed": len(fixes.remove),
