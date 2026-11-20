@@ -44,7 +44,9 @@ def speeds_by_segment(
     bounds = points.total_bounds
     streets = streets.cx[bounds[0] - 100 : bounds[2] + 100, bounds[1] - 100 : bounds[3] + 100]
     joined = gpd.sjoin_nearest(points, streets, max_distance=SNAP_METRES, how="inner")
-    joined = joined.drop_duplicates(subset=joined.index.name)  # empates de distância
+    # Um ponto equidistante de dois eixos volta duas vezes, com o mesmo índice;
+    # fica a primeira correspondência.
+    joined = joined[~joined.index.duplicated(keep="first")]
     joined["moving"] = joined["kmh"].gt(MOVING_KMH)
     rows = []
     for (segment, hour), group in joined.groupby(["CDSEG", "hour"]):

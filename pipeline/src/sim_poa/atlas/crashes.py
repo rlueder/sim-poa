@@ -17,6 +17,8 @@ import pyogrio
 
 CELL_METRES = 250
 FIRST_YEAR = 2021
+LAT_BOUNDS = (-30.4, -29.8)
+LON_BOUNDS = (-51.4, -50.9)
 METRIC_CRS = 31982
 _FIELDS = [
     "Ano",
@@ -50,8 +52,12 @@ def read(path: Path) -> pd.DataFrame:
 
 def grid(frame: pd.DataFrame) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Células com sinistros e um resumo da cidade por ano e hora."""
-    located = frame.dropna(subset=["lat", "lon"])
-    located = located[located["lat"].between(-30.4, -29.8) & located["lon"].between(-51.4, -50.9)]
+    with_coordinates = frame.dropna(subset=["lat", "lon"])
+    # Caixa que envolve Porto Alegre com folga; fora dela é erro de coordenada.
+    inside = with_coordinates["lat"].between(*LAT_BOUNDS) & with_coordinates["lon"].between(
+        *LON_BOUNDS
+    )
+    located = with_coordinates[inside]
     points = gpd.GeoSeries(gpd.points_from_xy(located["lon"], located["lat"]), crs=4326).to_crs(
         METRIC_CRS
     )
@@ -81,7 +87,8 @@ def grid(frame: pd.DataFrame) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         )
     summary = {
         "records": len(frame),
-        "without_coordinates": int(len(frame) - len(located)),
+        "without_coordinates": int(len(frame) - len(with_coordinates)),
+        "outside_city_bounds": int((~inside).sum()),
         "by_year": {
             str(y): [len(g), int(g["injury"].sum()), int(g["severe"].sum())]
             for y, g in frame.groupby("year")

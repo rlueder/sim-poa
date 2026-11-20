@@ -401,7 +401,8 @@ def build_crashes(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
     cells, summary = crashes.grid(frame)
     report.notes.append(
         f"sinistros: {summary['records']} desde {crashes.FIRST_YEAR}, {len(cells)} células, "
-        f"{summary['without_coordinates']} sem coordenadas"
+        f"{summary['without_coordinates']} sem coordenadas, "
+        f"{summary['outside_city_bounds']} com coordenadas fora da cidade"
     )
     report.files["crashes/grid.json"] = write_json(
         out_dir / "crashes" / "grid.json",

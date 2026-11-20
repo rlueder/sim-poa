@@ -158,11 +158,20 @@ def test_crash_grid_counts_by_year_and_severity() -> None:
             "hour": [7, 8, 18, None],
         }
     )
+    frame.loc[len(frame)] = {
+        "year": 2022,
+        "lat": -12.0,
+        "lon": -38.0,
+        "injury": False,
+        "severe": False,
+        "hour": 9,
+    }
     cells, summary = crashes.grid(frame)
+    assert summary["outside_city_bounds"] == 1
     assert len(cells) == 1
     assert cells[0]["years"] == {"2021": [2, 1, 0], "2022": [1, 1, 1]}
     assert summary["without_coordinates"] == 1
-    assert summary["by_year"]["2022"] == [2, 1, 1]
+    assert summary["by_year"]["2022"] == [3, 1, 1]
     assert summary["by_hour"][7] == 1
 
 
@@ -180,9 +189,10 @@ def test_bus_speeds_are_aggregated_per_segment_and_hour() -> None:
         crs=31982,
     )
     speeds = [20.0] * 20 + [0.0] * 10 + [40.0] * 5
+    # Dois pontos idênticos são duas medições: não podem virar uma só.
     points = gpd.GeoDataFrame(
         {"kmh": speeds, "hour": [8] * 30 + [9] * 5},
-        geometry=[Point(x + i, y + 5) for i in range(35)],
+        geometry=[Point(x + (i if i else 1), y + 5) for i in range(35)],
         crs=31982,
     )
     segments, summary = bus_gps.speeds_by_segment(points, streets)

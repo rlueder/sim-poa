@@ -198,6 +198,16 @@ def validate(trips: pd.DataFrame) -> list[Check]:
                 f"relatório: {_clock(start)}, tolerância de 1%",
             )
         )
+    untimed = trips["depart_min"].isna() | trips["arrive_min"].isna()
+    checks.append(
+        Check(
+            "Viagens sem horário legível",
+            int(untimed.sum()),
+            float("nan"),
+            True,
+            "entram no total do dia, mas não nas horas pico nem no perfil horário",
+        )
+    )
     pm_start, pm_total = peak_by_arrival(
         trips, motorized=True, first_start=12 * 60, last_start=21 * 60
     )
