@@ -8,6 +8,7 @@ dependencies = [
     "eclipse-sumo==1.28.0",
     "geopandas>=1.2.0",
     "openpyxl>=3.1.5",
+    "osmium>=4.3.2",
     "pandas>=3.1.1",
     "pdfplumber>=0.11.10",
     "pyarrow>=26.0.1",

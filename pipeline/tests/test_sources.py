@@ -14,7 +14,7 @@ def test_repository_sources_are_valid() -> None:
     assert "default" in config.groups
     assert {s.kind for s in config.sources} == {"webdav", "ckan", "url"}
     default_ids = {s.id for s in config.select(["default"])}
-    assert {"edom-2023", "pesquisas-fluxo", "centro-bus-gps", "osm-bbbike"} <= default_ids
+    assert {"edom-2023", "pesquisas-fluxo", "centro-bus-gps", "osm-geofabrik-sul"} <= default_ids
     assert "centro-historico" not in default_ids
     assert "edom-2003" not in default_ids
 

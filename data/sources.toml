@@ -172,9 +172,10 @@ publisher = "Prefeitura de Porto Alegre"
 description = "Inventário de sinalização horizontal e vertical"
 
 [[source]]
-id = "osm-bbbike"
+id = "osm-geofabrik-sul"
 group = "default"
 kind = "url"
-url = "https://download.bbbike.org/osm/bbbike/PortoAlegre/PortoAlegre.osm.pbf"
-publisher = "OpenStreetMap (extrato BBBike)"
-description = "Extrato do OpenStreetMap de Porto Alegre, © colaboradores do OpenStreetMap, ODbL"
+# Recorte datado; o BBBike "PortoAlegre" é uma caixa fixa que deixa de fora o sul da cidade.
+url = "https://download.geofabrik.de/south-america/brazil/sul/sul-261119.osm.pbf"
+publisher = "OpenStreetMap (recorte Geofabrik)"
+description = "Extrato do OpenStreetMap da Região Sul, 19/11/2026, © colaboradores do OpenStreetMap, ODbL"
