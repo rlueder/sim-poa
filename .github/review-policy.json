@@ -1,9 +1,22 @@
 {
-  "enabled": false,
-  "provider": "github-models",
-  "fallbackProviders": [],
-  "includePaths": ["packages/**/src/**"],
-  "excludePaths": ["**/fixtures/**"],
+  "enabled": true,
+  "provider": "openrouter",
+  "fallbackProviders": ["anthropic", "github-models"],
+  "includePaths": [
+    "pipeline/src/**",
+    "pipeline/tests/**",
+    "pipeline/scripts/**",
+    "pipeline/pyproject.toml",
+    "site/src/**",
+    "site/*.ts",
+    "site/index.html",
+    "data/sources.toml",
+    ".github/**",
+    "docs/**",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "excludePaths": ["**/fixtures/**", "**/uv.lock", "site/public/data/**", "data/reports/**"],
   "scanForSecretsBeforeSending": true,
   "onSensitiveContent": "block"
 }
