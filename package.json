@@ -11,6 +11,7 @@
   "author": "Rafael Lüder",
   "type": "module",
   "scripts": {
+    "atlas:build": "pnpm --filter @sim-poa/pipeline atlas:build",
     "build": "turbo run build",
     "clean": "turbo run clean",
     "data:fetch": "pnpm --filter @sim-poa/pipeline data:fetch",

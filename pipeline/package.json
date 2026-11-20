@@ -5,6 +5,7 @@
   "description": "Pipeline Python (dados e SUMO), exposto ao Turborepo pelos scripts abaixo",
   "license": "MIT",
   "scripts": {
+    "atlas:build": "sh scripts/uv.sh run --frozen sim-poa atlas",
     "data:fetch": "sh scripts/uv.sh run --frozen sim-poa fetch",
     "format": "sh scripts/uv.sh run --frozen ruff format .",
     "format:check": "sh scripts/uv.sh run --frozen ruff format --check .",
