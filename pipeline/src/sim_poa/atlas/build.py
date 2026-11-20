@@ -117,9 +117,10 @@ def build_edom(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
 
 def build_counts(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
     cache = raw_dir.parent / "derived" / "counts"
-    surveys = counts_build.collect(raw_dir, cache)
+    # Eixos e corredores antes das planilhas: um corredor ausente falha logo.
     index = StreetIndex.from_zip(counts_build.centrelines_path(raw_dir))
     buffers = counts_build.corridor_buffers(index)
+    surveys = counts_build.collect(raw_dir, cache)
     for survey in surveys:
         if survey.info.status == "ok":
             survey.location = counts_build.locate(index, survey)
