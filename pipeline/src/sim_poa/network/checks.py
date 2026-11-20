@@ -390,6 +390,9 @@ def smoke_test(
             "--route-files",
             str(trips),
             "--mesosim",
+            # As viagens saem durante `seconds`; a simulação vai até o triplo para
+            # as últimas chegarem. Quem ainda estiver rodando no fim aparece em
+            # "Running" no resumo.
             "--end",
             str(seconds * 3),
             "--no-step-log",

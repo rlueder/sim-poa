@@ -93,7 +93,9 @@ Set `SIM_POA_DATA_DIR` to put it elsewhere.
   `--chart-*` tokens, which fail the colour-vision and contrast checks. The
   interface still uses the theme.
 - `pipeline/pyproject.toml` marks geopandas, openpyxl, xlrd, pyarrow,
-  pdfplumber, shapely, pyproj and pyogrio as untyped for mypy; none ships types.
+  pdfplumber, shapely, pyproj, pyogrio and `sumo` (the `eclipse-sumo` package)
+  as untyped for mypy; none ships types. `sumolib` is loaded at run time from
+  the package's `tools/` folder, so mypy never sees it.
   pandas is checked through `pandas-stubs`.
 - Map tooltips insert text with `textContent`, never HTML: names come from
   external files.
