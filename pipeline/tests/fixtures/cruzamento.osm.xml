@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Cruzamento sintético com duas vias de mão dupla e uma de mão única, só para
+     verificar que o netconvert instalado converte OSM. Coordenadas próximas
+     ao Centro de Porto Alegre, mas os nós não correspondem a vias reais. -->
+<osm version="0.6" generator="sim-poa-teste">
+  <node id="1" lat="-30.0300" lon="-51.2300" version="1"/>
+  <node id="2" lat="-30.0300" lon="-51.2280" version="1"/>
+  <node id="3" lat="-30.0300" lon="-51.2260" version="1"/>
+  <node id="4" lat="-30.0320" lon="-51.2280" version="1"/>
+  <node id="5" lat="-30.0280" lon="-51.2280" version="1"/>
+  <way id="101" version="1">
+    <nd ref="1"/><nd ref="2"/><nd ref="3"/>
+    <tag k="highway" v="secondary"/>
+    <tag k="lanes" v="2"/>
+    <tag k="maxspeed" v="50"/>
+    <tag k="name" v="Rua de Teste"/>
+  </way>
+  <way id="102" version="1">
+    <nd ref="4"/><nd ref="2"/><nd ref="5"/>
+    <tag k="highway" v="tertiary"/>
+    <tag k="oneway" v="yes"/>
+    <tag k="maxspeed" v="40"/>
+    <tag k="name" v="Travessa de Teste"/>
+  </way>
+</osm>

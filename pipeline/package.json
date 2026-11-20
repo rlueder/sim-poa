@@ -1,0 +1,15 @@
+{
+  "name": "@sim-poa/pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pipeline Python (dados e SUMO), exposto ao Turborepo pelos scripts abaixo",
+  "license": "MIT",
+  "scripts": {
+    "data:fetch": "sh scripts/uv.sh run --frozen sim-poa fetch",
+    "format": "sh scripts/uv.sh run --frozen ruff format .",
+    "format:check": "sh scripts/uv.sh run --frozen ruff format --check .",
+    "lint": "sh scripts/uv.sh run --frozen ruff check .",
+    "test": "sh scripts/uv.sh run --frozen pytest",
+    "typecheck": "sh scripts/uv.sh run --frozen mypy"
+  }
+}

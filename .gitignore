@@ -8,3 +8,15 @@ coverage
 .env
 .env.local
 .env.*.local
+
+# Dados brutos: grandes e ainda mudando no servidor. `pnpm data:fetch` os
+# reconstrói a partir de data/sources.toml; data/manifest.csv é versionado.
+data/raw/
+*.part
+
+# Python (pipeline/)
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
