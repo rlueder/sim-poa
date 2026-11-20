@@ -8,9 +8,11 @@ dependencies = [
     "eclipse-sumo==1.28.0",
     "geopandas>=1.2.0",
     "openpyxl>=3.1.5",
+    "osmium>=4.3.2",
     "pandas>=3.1.1",
     "pdfplumber>=0.11.10",
     "pyarrow>=26.0.1",
+    "rtree>=1.4.1",
     "xlrd>=2.0.2",
 ]
 
@@ -43,7 +45,7 @@ files = ["src", "tests"]
 # Pacotes sem tipos publicados. Pacotes de stubs (types-openpyxl e afins)
 # seriam dependências novas; até lá, o mypy os trata como não tipados.
 [[tool.mypy.overrides]]
-module = ["geopandas.*", "openpyxl.*", "xlrd.*", "pyarrow.*", "pdfplumber.*", "shapely.*", "pyproj.*", "pyogrio.*"]
+module = ["geopandas.*", "openpyxl.*", "xlrd.*", "pyarrow.*", "pdfplumber.*", "shapely.*", "pyproj.*", "pyogrio.*", "sumo.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

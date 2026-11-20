@@ -13,6 +13,9 @@ const CountsView = lazy(() =>
 const CrashesView = lazy(() =>
   import('./views/crashes/CrashesView').then((m) => ({ default: m.CrashesView })),
 );
+const NetworkView = lazy(() =>
+  import('./views/network/NetworkView').then((m) => ({ default: m.NetworkView })),
+);
 const SpeedsView = lazy(() =>
   import('./views/speeds/SpeedsView').then((m) => ({ default: m.SpeedsView })),
 );
@@ -30,6 +33,7 @@ const VIEWS = [
   { key: 'onibus', label: 'Ônibus' },
   { key: 'oferta', label: 'Oferta' },
   { key: 'sinistros', label: 'Sinistros' },
+  { key: 'rede', label: 'Rede' },
   { key: 'sobre', label: 'Sobre' },
 ] as const;
 
@@ -81,6 +85,7 @@ export function App() {
           {view === 'onibus' && <BusesView />}
           {view === 'oferta' && <SupplyView />}
           {view === 'sinistros' && <CrashesView />}
+          {view === 'rede' && <NetworkView />}
           {view === 'sobre' && <About />}
         </Suspense>
 

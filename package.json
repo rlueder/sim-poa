@@ -18,6 +18,7 @@
     "format": "prettier --write . && pnpm --filter @sim-poa/pipeline format",
     "format:check": "prettier --check . && pnpm --filter @sim-poa/pipeline format:check",
     "lint": "turbo run lint",
+    "network:build": "pnpm --filter @sim-poa/pipeline network:build",
     "prepare": "husky",
     "release": "semantic-release",
     "test": "turbo run test",

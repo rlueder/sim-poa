@@ -7,6 +7,7 @@ import sys
 
 from sim_poa.atlas import build as atlas_build
 from sim_poa.fetch import download, sources
+from sim_poa.network import build as network_build
 from sim_poa.paths import DATA_DIR_ENV, raw_data_dir, repo_root
 
 
@@ -80,6 +81,26 @@ def _atlas(args: argparse.Namespace) -> int:
     return 0
 
 
+def _network(args: argparse.Namespace) -> int:
+    root = repo_root()
+    report = network_build.build(
+        raw_data_dir(),
+        root / "data" / "derived" / "network",
+        root / "site" / "public" / "data",
+        root / "data" / "reports",
+    )
+    print()
+    for name, size in sorted(report.files.items()):
+        print(f"  {size / 1e3:9,.1f} kB  {name}")
+    print(f"  {report.total_bytes / 1e6:9,.2f} MB  total no site")
+    if report.checks_failed:
+        print(f"Conferências que falharam: {len(report.checks_failed)}")
+        for name in report.checks_failed:
+            print(f"  {name}")
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sim-poa")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -105,6 +126,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--module", action="append", help="só este módulo (padrão: todos); repetível"
     )
     atlas.set_defaults(handler=_atlas)
+
+    network = commands.add_parser(
+        "network", help="monta a rede do SUMO em data/derived/network/ e a confere"
+    )
+    network.set_defaults(handler=_network)
     return parser
 
 

@@ -189,8 +189,6 @@ Checked on 20 November 2026 against the downloaded files.
 
 ## Not checked yet
 
-- Whether the BBBike extract reaches far enough along the entry highways to
-  place the external gates (guide section 4.4). Phase 2.
 - Mesoscopic support for parking areas and rerouters (guide section 4.5).
   Phase 2.
 - The meaning of the column codes in the cyclist and pedestrian templates.
