@@ -7,14 +7,13 @@ the way.
 
 ## Current status
 
-- **Phase 0** merged in PR #1 on 20 November 2026. Still open: the full
-  download (running) and the manifest commit, on branch
-  `chore/manifesto-dados`.
-- **Phase 1** (atlas of observed data), in progress on branch
-  `feat/fase-1-atlas`, nothing committed yet. All eight modules and seven site
-  views are built and tested on downloaded and scratch copies of the data;
-  the final build waits for the full download. Decisions recorded under
-  "Phase 1: decisions".
+- **Phase 0** merged in PR #1. Still open: the full download (running) and
+  its manifest, on branch `chore/manifesto-dados`.
+- **Phase 1** (atlas) merged in PR #2 on 20 November 2026, with only the EDOM
+  data. The full build of the other modules goes into the same branch as the
+  manifest, once the download ends; three acceptance criteria wait for it.
+- **Phase 2** (road network), built on branch `feat/fase-2-rede`. Every check
+  passes; the bus import (with `rtree`, approved) is in progress.
 
 ## Phase 0: what was found before planning
 
@@ -328,3 +327,150 @@ Out of scope: any simulation, the SUMO network, and calibration.
    `pandas-stubs` as a development dependency, so mypy checks pandas code.
    The maintainer creates the Cloudflare Pages project and the repository
    secrets for publishing.
+
+## Phase 2: what was found before planning
+
+- **The OSM extract chosen in phase 0 does not cover the city.** The BBBike
+  "PortoAlegre" extract is a fixed box, longitude −51.28 to −51.05 and latitude
+  −30.14 to −29.94. The municipality runs from −51.303 to −51.012 and from
+  −30.269 to −29.932 (from the EDOM zone polygons). Sixteen of the 106 city
+  zones extend outside the box, with 253,348 residents in 2022: the whole south
+  (Restinga, Belém Novo, Lami, Ponta Grossa) and the eastern edge.
+- **`netconvert` does not read `.pbf`.** It takes OSM XML (`--osm-files`), so
+  the extract must be converted and clipped first.
+- **Default speed limits.** Where OSM has no `maxspeed`, the typemap needs the
+  urban defaults of the Brazilian traffic code (art. 61). From memory they are
+  80, 60, 40 and 30 km/h by road class; `planalto.gov.br` did not respond on
+  20 November, so they are **unverified** until the text is read.
+
+## Phase 2: design
+
+**Network source.** Geofabrik's southern Brazil extract, as a dated snapshot:
+`https://download.geofabrik.de/south-america/brazil/sul/sul-261119.osm.pbf`
+(431,147,733 bytes, 19 November 2026). Geofabrik lists dated files next to
+`sul-latest`; how long it keeps them is not stated, so the manifest hash is
+the real pin and the source can move to a newer date deliberately. The extract
+is clipped to the municipal boundary plus a 2 km buffer, so each entry road
+reaches past the boundary. Clipping and conversion to OSM XML use `pyosmium`,
+keeping only roads, the ways turn restrictions refer to, signals and transit
+relations.
+
+**Build.** `pnpm network:build` runs, in order:
+
+1. Clip and convert the OSM extract (`pyosmium`).
+2. `netconvert` with the options in guide section 4.5 plus `--osm.turn-lanes`,
+   `--output.street-names`, `--osm.sidewalks false`, and a Brazilian typemap:
+   road classes from SUMO's urban typemap, default speeds from the traffic code
+   once verified, lane counts from OSM where tagged.
+3. External gates: the edges where motorway, trunk, primary and secondary
+   roads cross the municipal boundary, named and listed.
+4. Signals: compare the network's traffic lights with the 1,555-record city
+   inventory by distance (match within 30 m), then correct the network with
+   `--tls.set` and `--tls.unset` where the inventory is clearly right.
+5. Buses: GTFS stops and routes with `gtfs2pt.py` for the phase 1 Wednesday.
+6. Checks: zone-to-zone reachability for the 106 city zones, free-flow travel
+   times on about ten named corridors (the four focus corridors among them),
+   and a mesoscopic smoke test with random trips, counting teleports.
+
+Outputs go to `data/derived/network/` (not committed: the `.net.xml` is tens of
+MB) and a compact summary to the site: a new "Rede" tab with roads coloured by
+lanes or speed, signals coloured by match status, and the corridor travel
+times.
+
+**Focus corridors** (decision 4): lanes, turn lanes and signals on Av. Carlos
+Gomes, Av. Protásio Alves, Av. Ipiranga and Av. Nilo Peçanha / Av. Nilópolis
+are checked against OSM, the EPTC signal inventory and the bus corridor layer,
+and listed in a table for the maintainer to review.
+
+## Phase 2: acceptance criteria
+
+Evidence comes from `pnpm network:build` on 20 November 2026, recorded in
+`data/reports/network.json`.
+
+- [x] The network covers the whole municipality. **Reworded, approved (decision 4):**
+      the original test (every zone centroid within 300 m of an edge) fails for
+      ten large southern zones whose representative point lies 301 to 592 m from
+      the nearest road, although each contains between 117 and 1,770 drivable
+      edges. The check now asks that every city zone contain drivable edges:
+      all 106 do, the fewest has 60.
+- [x] `netconvert` warnings reviewed; the 2,108 are grouped below, each group
+      with a reason.
+- [x] Every city zone can reach every other by car: 11,130 of 11,130 pairs
+      routed by `duarouter`.
+- [x] Network signals compared with the 1,555 inventory records and mapped in
+      the "Rede" tab: 1,255 matched before corrections and 1,477 after; 78
+      left without a signal, 65 of them mid-block pedestrian signals.
+- [x] Free-flow travel times on ten corridors, both directions, in the "Rede"
+      tab, for the maintainer to judge.
+- [x] Mesoscopic smoke test: 3,600 random trips in one hour, all arrived, 0
+      teleports.
+- [x] The default speeds cite art. 61 of the traffic code, read on
+      planalto.gov.br on 20 November 2026 (`network/speeds.py`).
+- [ ] CI is green. The build ran twice from `data/raw/` with the same results.
+
+Not done: step 5 of the design, buses from GTFS. `gtfs2pt.py` imports `rtree`,
+which was not installed; approved as decision 3 below, the step is in progress.
+
+Out of scope: lane-level corrections outside the focus corridors, and demand
+(phase 3).
+
+## Phase 2: results
+
+**Build.** Clipping the 431 MB extract takes about a minute and 3.6 GB of
+memory: 24,296 ways, 1,226 turn restrictions, 2,016 OSM signal nodes. The
+network has 62,556 drivable edges (6,447 km), 26,127 junctions and 1,625
+signal controllers. The whole build, checks included, takes about six minutes.
+
+**Changes to the design found while building.**
+
+- `--tls.discard-simple` is not used. It drops signals that are not at
+  junctions, and half of the city inventory (797 records, type `EXCLUSIVO`) are
+  mid-block pedestrian signals. Without it the inventory match rose from 683 to
+  1,255 before any correction.
+- The municipal boundary comes from the unsimplified zones: the simplified
+  ones left gaps that made Av. Ipiranga a city entry.
+- Corridor times follow the avenue (other roads cost 20 times their time).
+  Unconstrained, the fastest route left Assis Brasil, Ipiranga and Nilo
+  Peçanha for parallel roads, down to 6% of the length on the avenue.
+- Signal corrections: 202 junctions switched on where the inventory has a
+  signal and the network did not, 19 switched off inside the city where no
+  record is within 80 m. Thresholds are in `docs/ASSUMPTIONS.md`.
+- The site map merges the two directions of each road and joins runs with the
+  same attributes, 1.1 MB instead of 4.5 MB.
+
+**Gates.** 36 edges cross the boundary on motorway, trunk, primary and
+secondary roads (18 in, 18 out): the Freeway, Ponte Lupicínio Rodrigues,
+Ponte Luís Carlos Prestes, Ponte do Rio Jacuí, Baltazar de Oliveira Garcia, Bento Gonçalves, Estrada Caminho do Meio, Estrada
+São Caetano and others, listed in the report. Protásio Alves and Assis Brasil
+are not among them; whether they cross the boundary as a lower OSM class or
+end before it is to check in phase 3, when external demand needs them.
+
+**Corridors.** Free-flow averages of 46 to 60 km/h; most roads have no
+`maxspeed` and take the 60 km/h arterial default. Edvaldo Pereira Paiva comes
+out at 1.7 km because OSM gives that name to only 1.7 km. Ipiranga "volta"
+keeps 82% of its length on the avenue and Baltazar "ida" 80%; where those
+routes leave the avenue is not checked yet.
+
+**`netconvert` warnings (2,108).**
+
+| Group                                                                                           | Count                             | Reason                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Junction clusters not joined or reduced                                                         | 718                               | `--junctions.join` declines clusters with parallel roads or slip lanes. The nodes stay separate, which leaves short internal edges at some large junctions. Harmless for routing; to look at on the focus corridors in phase 4.           |
+| Turn restrictions ignored                                                                       | 385 messages, about 190 relations | netconvert cannot tell the direction of a restriction when the `from` way runs through the `via` node. Those turn bans are lost. Fixing it needs the ways split at the `via` nodes; left for phase 4 if the focus corridors are affected. |
+| Turn-lane tags not applied                                                                      | 265                               | `turn:lanes` tags that do not match the lane count, or unknown lane-use values. netconvert falls back to its own lane connections on those approaches.                                                                                    |
+| Geometry (sharp turns, slower turning speed, crossing left turns, junction shapes, roundabouts) | 555                               | OSM geometry at tight junctions. SUMO lowers the speed of tight turns, which is realistic. Crossing left turns matter only in microscopic runs.                                                                                           |
+| U-turn ambiguity, unconnected lanes, one connection not set                                     | 86                                | Small local defects; none broke reachability.                                                                                                                                                                                             |
+| Tags not understood                                                                             | 62                                | `maxspeed:type=urban` without a number (38 ways, which take the class default), combined types such as a road that is also a railway (23), one reversible one-way.                                                                        |
+| Isolated fragments removed                                                                      | 37                                | Pieces cut off by the clip or not connected to anything, removed by `--remove-edges.isolated`.                                                                                                                                            |
+
+## Phase 2: decisions (20 November 2026)
+
+1. **Network source approved**: the dated Geofabrik `sul` snapshot replaces
+   the BBBike extract in `data/sources.toml`.
+2. **`osmium` (pyosmium) approved** as a pipeline dependency for clipping the
+   extract and converting it to OSM XML.
+3. **`rtree` approved** as a pipeline dependency, for SUMO's GTFS importer
+   (`gtfs2pt.py`) and `sumolib`'s spatial lookups.
+4. **Coverage criterion reworded and approved**: every city zone must contain
+   drivable edges, instead of its centroid snapping to an edge within 300 m.
+5. **Commit and open the PR now**; the bus step goes into the same PR.
