@@ -242,3 +242,42 @@ def test_parse_cached_reuses_previous_result(tmp_path: Path) -> None:
     assert again_info.site == first_info.site
     assert first is not None and again is not None
     pd.testing.assert_frame_equal(first, again)
+
+
+# As planilhas guardam datas como 0207-06-21; o openpyxl as lê como dt.date(207, 6, 21),
+# que o Python aceita. Os casos abaixo usam datas assim.
+@pytest.mark.parametrize(
+    ("path", "typed", "expected", "flag"),
+    [
+        (
+            "contagens_eptc/2008/Pedestres/Maias.xls",
+            dt.date(208, 4, 18),
+            dt.date(2008, 4, 18),
+            "ano-corrigido-pela-pasta",
+        ),
+        ("Loteamento Agronomia/02 - Bento.xls", dt.date(207, 6, 21), None, "data-invalida"),
+        ("contagens_eptc/2019/Bento.xls", dt.date(207, 6, 21), None, "data-invalida"),
+        ("contagens_eptc/2019/Bento.xls", dt.date(2019, 6, 21), dt.date(2019, 6, 21), None),
+    ],
+)
+def test_plausible_date(
+    path: str, typed: dt.date, expected: dt.date | None, flag: str | None
+) -> None:
+    info = counts.CountFile(source="teste", path=path, subject="veiculos")
+    assert counts.plausible_date(typed, info) == expected
+    assert info.flags == ([flag] if flag else [])
+
+
+@pytest.mark.parametrize(
+    ("typed", "folder", "expected"),
+    [
+        ("208", "2008", True),
+        ("207", "2017", True),
+        ("208", "2800", False),
+        ("208", "0282", False),
+        ("028", "2008", False),
+        ("207", "2019", False),
+    ],
+)
+def test_year_digits_must_appear_in_order(typed: str, folder: str, expected: bool) -> None:
+    assert counts._is_subsequence(typed, folder) is expected

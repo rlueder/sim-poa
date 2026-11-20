@@ -7,12 +7,9 @@ the way.
 
 ## Current status
 
-- **Phase 0** merged in PR #1. Still open: the full download (running) and
-  its manifest, on branch `chore/manifesto-dados`.
-- **Phase 1** (atlas) merged in PR #2 on 20 November 2026, with only the EDOM
-  data. The full build of the other modules goes into the same branch as the
-  manifest, once the download ends; three acceptance criteria wait for it.
-- **Phase 2** (road network), built on branch `feat/fase-2-rede`. Every check
+- **Phase 0** and **phase 1** are complete: PRs #1 and #2, then the full
+  download manifest and the full atlas build in PR #5 (20 November 2026).
+- **Phase 2** (road network), PR #4 on branch `feat/fase-2-rede`. Every check
   passes; the bus import (with `rtree`, approved) is in progress.
 
 ## Phase 0: what was found before planning
@@ -131,18 +128,25 @@ the Centro study.
       ruff, mypy strict (14 files), pytest (27 passed), ESLint, tsc, Vitest
       (2 passed), Vite build. `pnpm format:check` runs Prettier and
       `ruff format --check`.
-- [ ] CI is green on the phase 0 pull request. Inactive jobs listed: `review`
+- [x] CI is green on the phase 0 pull request (#1, merged). Inactive jobs listed: `review`
       (needs `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`) and
       `deploy-site` (needs Cloudflare Pages and Slack secrets; runs only on
       pushes to `main`).
-- [ ] `pnpm data:fetch` on an empty data directory fetches the `default`
-      group; a second run downloads nothing. Evidence: both run summaries.
-- [ ] `data/manifest.csv` lists every downloaded file with URL, size, SHA-256
-      and dates. Evidence: row count against files on disk.
-- [ ] `uv run sumo --version` reports 1.28.0, and `netconvert` builds a
+- [x] `pnpm data:fetch` on an empty data directory fetches the `default`
+      group; a second run downloads nothing. Evidence (20 Nov): the full run
+      downloaded 5,292 files (2,876.8 MB), found 265 unchanged from an earlier
+      partial run and registered 17 already present, with no failures; the
+      second run downloaded 0 and found 5,574 unchanged.
+- [x] `data/manifest.csv` lists every downloaded file with URL, size, SHA-256
+      and dates. Evidence: 5,574 rows, every listed file is on disk, and the
+      row count per source equals the file count in each `data/raw/` folder.
+      The Geofabrik extract of phase 2 is on disk but belongs to PR #4's
+      source list; whichever of the two PRs merges second updates the
+      manifest.
+- [x] `uv run sumo --version` reports 1.28.0, and `netconvert` builds a
       network from a small OSM fixture in a pipeline test that also runs in
       CI. Local evidence: `Eclipse SUMO sumo 1.28.0`, built for
-      `Darwin-24.6.0 arm64`; `tests/test_sumo.py` passes. Waiting on CI.
+      `Darwin-24.6.0 arm64`; `tests/test_sumo.py` passes, in CI as well.
 - [x] `DATA_INVENTORY.md` covers every item marked unverified in section 4 of
       the guide. Evidence: [DATA_INVENTORY.md](DATA_INVENTORY.md), from 15
       sample files plus the WebDAV listings. Mesoscopic parking support is
@@ -275,27 +279,32 @@ Nilo Peçanha / Av. Nilópolis, and the site can filter to them.
       `HPM` columns, so the method was recovered by testing (arrival time,
       one-hour windows in 15-minute steps) and is written down in
       `docs/ASSUMPTIONS.md` and `DATA_INVENTORY.md`.
-- [ ] The count parser writes a report listing every workbook found, read or
+- [x] The count parser writes a report listing every workbook found, read or
       not, with the reason for each unread one. Each template has a test with
-      a small fixture. Done in code (`data/reports/counts.csv`, tests for the
-      EPTC, developer, pedestrian and cyclist templates); waiting for the full
-      download to run it on every workbook.
-- [ ] Every count and speed site has a location and the method used, or is
+      a small fixture. Evidence: `data/reports/counts.csv` lists 3,231
+      workbooks: 2,704 read, 378 in an unsupported layout, 148 that fail to
+      open and 1 empty, every unread one with its reason.
+- [x] Every count and speed site has a location and the method used, or is
       listed as unresolved with the reason. The site has a spot-check map
-      coloured by method. Done in code; on the partial download, 1,052 of 1,153
-      readable speed surveys (91%) and 18 of 20 sample counts are located.
-- [ ] Sites near each focus corridor are listed. Done in code
-      (`data/reports/focus_corridors.csv`, all modules); waiting for the full
-      download.
-- [ ] `pnpm atlas:build` regenerates `site/public/data/` from `data/raw/`;
+      coloured by method. Evidence: 2,402 of 2,704 counts located (89%) and
+      1,250 of 1,905 speed surveys (66%); every unlocated one has a reason in
+      the report. The speed share is lower than the 91% seen on the partial
+      download: 590 surveys name a single street with no crossing or number.
+      Follow-up for phase 4: street names that are dates ("24 de Outubro")
+      do not match the centreline names.
+- [x] Sites near each focus corridor are listed in
+      `data/reports/focus_corridors.csv`: Ipiranga 193, Protásio Alves 145,
+      Nilo Peçanha / Nilópolis 70, Carlos Gomes 46.
+- [x] `pnpm atlas:build` regenerates `site/public/data/` from `data/raw/`;
       the site builds to static files, runs locally with one command and loads
       its data without a backend; `site/public/data/` stays under 10 MB.
+      Evidence: the full build writes 4.62 MB; `vite build` succeeds.
 - [x] Every view names its sources with attribution to EPTC where its data is
       used; no file in the repository or the built site holds survey records
       below zone level. Evidence: every view ends with `SourceNote`, checked
       in the view tests; the EDOM outputs are zone summaries and zone pairs
       with at least 5 records (`edom/*.json`).
-- [ ] CI is green on the phase 1 pull request.
+- [x] CI is green on the phase 1 pull request (#2, merged).
 
 Out of scope: any simulation, the SUMO network, and calibration.
 
