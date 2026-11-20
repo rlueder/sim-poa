@@ -42,20 +42,21 @@ class BuildReport:
 
 def build_edom(raw_dir: Path, out_dir: Path, report: BuildReport) -> None:
     source = raw_dir / EDOM_DIR
-    trips = edom.read_trips(source / EDOM_WORKBOOK)
+    trips = edom.locate_trips(edom.read_trips(source / EDOM_WORKBOOK), source / EDOM_ZONES)
     checks = edom.validate(trips)
     report.checks_failed += [c.name for c in checks if not c.ok]
 
-    survey_zones = set(trips["zone_o"].dropna().astype(int)) | set(
-        trips["zone_d"].dropna().astype(int)
-    )
-    zones = edom.read_zones(source / EDOM_ZONES, survey_zones)
+    # O mapa mostra as 106 zonas da cidade. As zonas dos outros municípios são
+    # o município inteiro e cobririam o mapa; as viagens até lá contam nos
+    # totais, mas não entram no mapa nem nas linhas de desejo.
+    zones = edom.read_zones(source / EDOM_ZONES, set())
     points = zones.geometry.representative_point()
     centroids = {
         int(z): (round(p.x, 5), round(p.y, 5)) for z, p in zip(zones["zone"], points, strict=True)
     }
 
     summary = edom.zone_summary(trips)
+    summary = summary[summary["zone"].isin(centroids.keys())]
     lines = edom.desire_lines(trips, centroids)
     profile = edom.departure_profile(trips)
     out = out_dir / "edom"
