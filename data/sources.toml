@@ -1,0 +1,180 @@
+# Fontes de dados brutos do sim-poa.
+#
+# `pnpm data:fetch` baixa as fontes do grupo `default` para data/raw/<id>/ e
+# registra cada arquivo em data/manifest.csv. Grupos opcionais entram com
+# `pnpm data:fetch --group <nome>`.
+#
+# Tipos de fonte:
+#   webdav  compartilhamento público do Nextcloud da Procempa (ObservaMOB/EPTC).
+#           `include` e `exclude` são padrões fnmatch sobre o caminho dentro do
+#           compartilhamento; `*` também atravessa pastas.
+#   ckan    conjunto do portal dadosabertos.poa.br; baixa todos os recursos.
+#   url     um arquivo, em `url`.
+#
+# A origem de cada fonte está descrita em
+# docs/development/IMPLEMENTATION_GUIDE.md, seção 4.
+
+[defaults]
+webdav_base = "https://drive.procempa.com.br/public.php/webdav/"
+ckan_base = "https://dadosabertos.poa.br/api/3/action/"
+exclude = ["*Thumbs.db", "*.DS_Store", "*desktop.ini"]
+pause_seconds = 1.0
+
+# ── Demanda ──────────────────────────────────────────────────────────────
+
+[[source]]
+id = "edom-2023"
+group = "default"
+kind = "webdav"
+share = "eENg6LkJP9d5gqd"
+include = ["EDOM 2023/*"]
+publisher = "EPTC"
+description = "Pesquisa domiciliar de origem e destino 2023: microdados, relatório final e zonas"
+
+[[source]]
+id = "edom-2003"
+group = "edom-2003"
+kind = "webdav"
+share = "eENg6LkJP9d5gqd"
+include = ["EDOM_2003/*"]
+publisher = "EPTC"
+description = "Pesquisa domiciliar de origem e destino 2003, só para comparação"
+
+[[source]]
+id = "ibge-censo-2022-amostra-rs"
+group = "default"
+kind = "url"
+url = "https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Microdados_e_Areas_de_Ponderacao/Microdados_de_acesso_Publico/csv/43_RS.zip"
+publisher = "IBGE"
+description = "Censo Demográfico 2022, microdados da amostra do Rio Grande do Sul"
+
+# ── Tráfego observado ────────────────────────────────────────────────────
+
+[[source]]
+id = "pesquisas-fluxo"
+group = "default"
+kind = "webdav"
+share = "nPYCNzeyXSZGc2A"
+include = ["*"]
+publisher = "EPTC"
+description = "Contagens de veículos, pedestres e ciclistas e pesquisas de velocidade pontual"
+
+[[source]]
+id = "levantamentos-cit"
+group = "default"
+kind = "webdav"
+share = "T6QGi7ikF2Hg5YD"
+include = ["Levantamentos CIT (Até 2019)/*", "CAISMaua2021Contagens.zip"]
+publisher = "EPTC"
+description = "Levantamentos de tráfego até 2019 e contagens do Cais Mauá (2021)"
+
+[[source]]
+id = "contagens-matricial"
+group = "default"
+kind = "webdav"
+share = "T6QGi7ikF2Hg5YD"
+include = ["Contagens Matricial/*"]
+publisher = "EPTC"
+description = "Contagens de estudos de impacto de empreendimentos, 2016 a 2019"
+
+[[source]]
+id = "centro-bus-gps"
+group = "default"
+kind = "webdav"
+share = "T6QGi7ikF2Hg5YD"
+include = [
+  "Estudo de Mobilidade do Centro Histórico/P05-PesquisasTempodePercurso/Anexos digitais/BusGPSCentro.zip",
+]
+publisher = "EPTC"
+description = "Pontos de GPS de ônibus no Centro Histórico, do estudo de mobilidade do Centro"
+
+[[source]]
+id = "centro-historico"
+group = "centro"
+kind = "webdav"
+share = "T6QGi7ikF2Hg5YD"
+include = ["Estudo de Mobilidade do Centro Histórico/*"]
+exclude = [
+  "Estudo de Mobilidade do Centro Histórico/P05-PesquisasTempodePercurso/Anexos digitais/BusGPSCentro.zip",
+]
+publisher = "EPTC"
+description = "Estudo de mobilidade do Centro Histórico, completo (cerca de 8,6 GB)"
+
+[[source]]
+id = "relatorios-mensais"
+group = "default"
+kind = "webdav"
+share = "L4aLgjfKT8bSqN4"
+include = ["*"]
+publisher = "EPTC"
+description = "Relatórios anuais em PDF: fluxo de dia típico dos controladores, congestionamento, frota"
+
+[[source]]
+id = "controladores-velocidade"
+group = "default"
+kind = "webdav"
+share = "eNwpddbxXW7fN6B"
+include = ["*"]
+publisher = "EPTC"
+description = "Localização dos controladores e redutores eletrônicos de velocidade"
+
+[[source]]
+id = "acidentes"
+group = "default"
+kind = "webdav"
+share = "X3oWmEQo5bNP4Sr"
+include = ["*"]
+publisher = "EPTC"
+description = "Sinistros de trânsito desde 2010, com coordenadas, e vítimas"
+
+# ── Rede e oferta ────────────────────────────────────────────────────────
+
+[[source]]
+id = "camadas-eptc"
+group = "default"
+kind = "webdav"
+share = "LJp8MNCFmZKdPpD"
+include = ["*"]
+publisher = "EPTC"
+description = "Camadas da EPTC: semáforos, Área Azul, vagas, corredores, eixos, bairros, paradas"
+
+[[source]]
+id = "linhas-onibus"
+group = "default"
+kind = "webdav"
+share = "SS2MDqnK24RqRLm"
+include = ["*"]
+publisher = "EPTC"
+description = "Itinerários das linhas de ônibus e lotação e garagens"
+
+[[source]]
+id = "gtfs"
+group = "default"
+kind = "ckan"
+dataset = "gtfs"
+publisher = "Prefeitura de Porto Alegre"
+description = "GTFS do transporte coletivo municipal"
+
+[[source]]
+id = "stpoa"
+group = "default"
+kind = "ckan"
+dataset = "stpoa-sistema-de-transporte-publico-de-porto-alegre"
+publisher = "Prefeitura de Porto Alegre"
+description = "Tabelas horárias, itinerários e frota do transporte público"
+
+[[source]]
+id = "sinalizacao-grafica"
+group = "default"
+kind = "ckan"
+dataset = "sinalizacao-grafica"
+publisher = "Prefeitura de Porto Alegre"
+description = "Inventário de sinalização horizontal e vertical"
+
+[[source]]
+id = "osm-bbbike"
+group = "default"
+kind = "url"
+url = "https://download.bbbike.org/osm/bbbike/PortoAlegre/PortoAlegre.osm.pbf"
+publisher = "OpenStreetMap (extrato BBBike)"
+description = "Extrato do OpenStreetMap de Porto Alegre, © colaboradores do OpenStreetMap, ODbL"
