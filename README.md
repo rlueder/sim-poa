@@ -13,7 +13,21 @@ O modelo serve para comparar cenários entre si, com o erro de calibração decl
 
 ## Situação
 
-O projeto está no início. Ainda não há código de simulação. O plano, as fontes de dados verificadas e os critérios de aceite de cada fase estão em [`docs/development/IMPLEMENTATION_GUIDE.md`](docs/development/IMPLEMENTATION_GUIDE.md) (em inglês).
+O projeto está no início. Já existe o download reproduzível dos dados brutos; ainda não há código de simulação. O plano, as fontes de dados verificadas e os critérios de aceite de cada fase estão em [`docs/development/IMPLEMENTATION_GUIDE.md`](docs/development/IMPLEMENTATION_GUIDE.md) (em inglês), e o andamento em [`docs/development/PLAN.md`](docs/development/PLAN.md).
+
+## Como rodar
+
+Requisitos: Node 22 ou mais recente, pnpm 9 e [uv](https://docs.astral.sh/uv/). O uv instala o Python 3.13 e o SUMO 1.28.0 sozinho.
+
+```bash
+pnpm install
+pnpm test                          # testes do pipeline e do site
+pnpm data:fetch                    # baixa cerca de 3 GB de dados públicos para data/raw/
+pnpm data:fetch --group centro     # opcional: estudo completo do Centro Histórico (8,6 GB)
+pnpm --filter @sim-poa/site dev    # site local
+```
+
+O primeiro `pnpm data:fetch` leva algumas horas: são cerca de 5.700 arquivos baixados um de cada vez, com uma pausa entre eles, para não sobrecarregar os servidores da Prefeitura. Cada arquivo baixado fica registrado em `data/manifest.csv`, com URL, tamanho e SHA-256; uma segunda execução só baixa o que mudou no servidor.
 
 ## Como funciona
 

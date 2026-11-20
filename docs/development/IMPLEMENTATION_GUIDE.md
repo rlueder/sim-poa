@@ -101,9 +101,10 @@ What needs care here:
 - **The site reads pipeline outputs.** Decide early how results reach the site
   (static files in a compact format, sized for a browser) and declare every
   directory the site reads in `siteSourcePath` in `.precisa.json`.
-- **Interface text is in Brazilian Portuguese**, with full accents, per the
-  shared rules. Code, comments, commit messages and agent-facing documents
-  such as this one stay in English.
+- **Language follows the shared rules.** Interface text, README, code
+  comments, CLI messages and commit descriptions are in Brazilian Portuguese
+  with full accents. Identifiers and agent-facing documents (this guide,
+  `AGENTS.md`, `PLAN.md`, `DATA_INVENTORY.md`) are in English.
 - **Use the design tokens and shared components** for the site. Do not copy
   the company's logo or brand composition into this project; it is not a
   Precisa Saúde product.
